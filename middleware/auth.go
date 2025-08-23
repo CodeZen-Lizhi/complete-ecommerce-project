@@ -34,14 +34,21 @@ func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 获取Authorization头
 		token := c.GetHeader("Authorization")
-
 		// 简单验证token（实际项目中应该解析和验证token）
-		if token == "" || token != "valid_token" {
+		/*if token == "" || token != "valid_token" {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"code": 401,
 				"msg":  "未授权访问，请先登录",
 			})
 			c.Abort()
+			return
+		}*/
+		// 第二种写法
+		if token != "valid_token" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"code": 401,
+				"msg":  "未授权访问，请先登录",
+			})
 			return
 		}
 
@@ -69,4 +76,5 @@ func AdminAuthMiddleware() gin.HandlerFunc {
 
 		c.Next()
 	}
+	//todo 写一个统计方法用时的中间件
 }

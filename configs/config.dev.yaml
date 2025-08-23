@@ -1,0 +1,19 @@
+redis:
+  addr: "localhost:6379"
+  password: ""
+  db: 0
+  pool_size: 20        # 连接池大小，根据并发量调整
+  min_idle_conns: 5    # 最小空闲连接，避免频繁创建连接
+  idle_timeout: 300s   # 连接空闲5分钟后关闭
+
+app:
+  name: "gin-api"
+  port: 8080
+  env: dev
+
+mysql:
+  dsn: "root:qwer@1234@tcp(127.0.0.1:3306)/springboot-example?charset=utf8mb4&parseTime=True&loc=Local"
+  max_open_conns: 100
+  max_idle_conns: 20
+  conn_max_lifetime: 3600 # 连接最大存活时间(秒)
+  debug: true # 是否开启GORM调试模式
