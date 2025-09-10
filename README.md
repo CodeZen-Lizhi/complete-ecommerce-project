@@ -1,12 +1,11 @@
 项目demo
- 公共的封装的增删改查方法
+todo 
+公共的封装的增删改查方法
 规范使用方式  按层级调用过去 
 返回 controller  写一个 result
-
 事务
-
-log/slog
 错误嵌套 return fmt.Errorf("failed to read config file: %v", err)
+log/slog + 配置文件 slog 封装成一个全局单例
 
 	// 最底层的错误
 	rootErr := errors.New("网络连接超时")
@@ -32,24 +31,14 @@ log/slog
 	if errors.Is(finalErr, rootErr) {
 		fmt.Println("\n错误链中包含'网络连接超时'错误")
 	}
+技术栈：
 
-
-//检查是否实现接口 的断言
-// 定义一个接口
-type IAnimal interface {
-Speak() string
-}
-
-// 定义一个结构体
-type Dog struct {
-Name string
-}
-
-// Dog 实现 IAnimal 接口
-func (d *Dog) Speak() string {
-return "Woof!"
-}
-
-// 编译时检查，确保 *Dog 实现了 IAnimal 接口
-var _ IAnimal = (*Dog)(nil)
+| 技术类别  | 使用组件     | 说明                  |
+|-------|----------|---------------------|
+| 配置读取  | viper    | 用于读取和管理应用配置文件       |
+| 日志    | log/slog | Go 标准库中的结构化日志记录工具   |
+| Web框架 | GIN      | 高性能的 HTTP Web 框架    |
+| ORM   | GORM     | 强大的数据库 ORM 库        |
+| 热重载   | AIR      | Go 应用开发时的实时重载工具     |
+| Redis | Go-Redis | Redis 数据库的 Go 语言客户端 |
 

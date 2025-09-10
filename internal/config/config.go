@@ -15,35 +15,35 @@ var Cfg *Config
 
 // Config 总配置结构体
 type Config struct {
-	App   AppConfig   `yaml:"app"`
-	MySQL MySQLConfig `yaml:"mysql"`
-	Redis RedisConfig `yaml:"redis"` // Redis 配置节点
+	App   AppConfig   `mapstructure:"app"`
+	MySQL MySQLConfig `mapstructure:"mysql"`
+	Redis RedisConfig `mapstructure:"redis"` // Redis 配置节点
 }
 
 // RedisConfig Redis 配置结构体（与 YAML 中 redis 节点字段对应）
 type RedisConfig struct {
-	Addr            string        `yaml:"addr"`           // 地址：ip:port
-	Password        string        `yaml:"password"`       // 密码（无则空）
-	DB              int           `yaml:"db"`             // 数据库编号
-	PoolSize        int           `yaml:"pool_size"`      // 连接池大小
-	ConnMaxIdleTime time.Duration `yaml:"idle_timeout"`   // 空闲超时（秒）
-	MinIdleConns    int           `yaml:"min_idle_conns"` // 最小空闲连接数
+	Addr            string        `mapstructure:"addr"`           // 地址：ip:port
+	Password        string        `mapstructure:"password"`       // 密码（无则空）
+	DB              int           `mapstructure:"db"`             // 数据库编号
+	PoolSize        int           `mapstructure:"pool_size"`      // 连接池大小
+	ConnMaxIdleTime time.Duration `mapstructure:"idle_timeout"`   // 空闲超时（秒）
+	MinIdleConns    int           `mapstructure:"min_idle_conns"` // 最小空闲连接数
 }
 
 // AppConfig 应用基本配置
 type AppConfig struct {
-	Name string `yaml:"name"`
-	Port int    `yaml:"port"`
-	Env  string `yaml:"env"`
+	Name string `mapstructure:"name"`
+	Port int    `mapstructure:"port"`
+	Env  string `mapstructure:"env"`
 }
 
 // MySQLConfig MySQL数据库配置
 type MySQLConfig struct {
-	Dsn             string `yaml:"dsn"`
-	MaxOpenConns    int    `yaml:"max_open_conns"`
-	MaxIdleConns    int    `yaml:"max_idle_conns"`
-	ConnMaxLifetime int    `yaml:"conn_max_lifetime"`
-	Debug           bool   `yaml:"debug"`
+	Dsn             string `mapstructure:"dsn"`
+	MaxOpenConns    int    `mapstructure:"max_open_conns"`
+	MaxIdleConns    int    `mapstructure:"max_idle_conns"`
+	ConnMaxLifetime int    `mapstructure:"conn_max_lifetime"`
+	Debug           bool   `mapstructure:"debug"`
 }
 
 // Init 从配置文件加载配置
@@ -62,10 +62,16 @@ func Init() error {
 		log.Fatalf("读取配置失败：%v", err)
 		return err
 	}
+	//读取普通的配置
+	if viper.IsSet("userid") {
+		userid := viper.GetString("userid")
+		fmt.Println(userid)
+	}
 	// 4. 绑定环境变量（可选，优先级：环境变量 > 配置文件）
-	viper.AutomaticEnv()
+	viper.AutomaticEnv()      //启用Viper自动读取环境变量的功能
 	viper.SetEnvPrefix("APP") // 环境变量前缀，如 APP_REDIS_HOST
-	err := viper.BindEnv("redis.host", "REDIS_HOST")
+	//- 将配置文件中的"redis.addr"字段与"REDIS_HOST"环境变量进行绑定 这样改环境变量就可以覆盖配置文件的数据
+	err := viper.BindEnv("redis.addr", "REDIS_HOST")
 	if err != nil {
 		return err
 	} // 自定义映射
