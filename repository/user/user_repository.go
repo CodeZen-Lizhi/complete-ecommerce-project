@@ -4,7 +4,6 @@ import (
 	"ecommerce/internal/logger"
 	"ecommerce/internal/mysql"
 	"ecommerce/model"
-	"fmt"
 	"gorm.io/gorm"
 )
 
@@ -55,6 +54,5 @@ func (r *userRepository) FindByID(id uint) (*model.User, error) {
 	}
 	log := logger.GetLogger()
 	log.Debug("查询到用户", "user", user)
-	fmt.Println(user)
 	return &user, tx.Error
 }

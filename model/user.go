@@ -13,9 +13,9 @@ type User struct {
 	Age        int        `gorm:"default:0" json:"age"`
 	DelFlag    *string    `json:"del_flag" gorm:"column:del_flag" comment:"删除标志（例如：0-未删除，1-已删除）"`
 	CreateId   *int64     `json:"create_id" gorm:"column:create_id" comment:"创建人ID"`
-	CreateTime *time.Time `json:"create_time" gorm:"column:create_time" comment:"创建时间"`
+	CreateTime *time.Time `json:"create_time" gorm:"column:create_time;serializer:json" comment:"创建时间"`
 	UpdateId   *int64     `json:"update_id" gorm:"column:update_id" comment:"更新人ID"`
-	UpdateTime *time.Time `json:"update_time" gorm:"column:update_time" comment:"更新时间"`
+	UpdateTime *time.Time `json:"update_time" gorm:"column:update_time;serializer:json" comment:"更新时间"`
 }
 
 //字段有指针 可以存 null 不加指针就会有默认值
