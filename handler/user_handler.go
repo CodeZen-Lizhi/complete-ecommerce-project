@@ -1,8 +1,12 @@
 package handler
 
 import (
+	"ecommerce/internal/logger"
+	userDao "ecommerce/repository/user"
+	userService "ecommerce/service/user"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -56,17 +60,28 @@ func GetCaptcha(c *gin.Context) {
 // GetUserInfo 获取个人信息
 func GetUserInfo(c *gin.Context) {
 	// 从上下文获取用户ID（实际项目中从token解析）
-	userID, _ := c.Get("userID")
-
+	log := logger.GetLogger()
+	userID, exists := c.GetQuery("userID")
+	if !exists {
+		log.Error("未获取到用户id")
+		return
+	}
+	userId, err := strconv.ParseUint(userID, 10, 32)
+	//手写注入
+	userRepository := userDao.NewUserRepository()
+	service := userService.NewUserService(userRepository)
+	user, err := service.FindByID(uint(userId))
+	if err != nil {
+		log.Error("用户不存在")
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{
 		"code": 200,
 		"data": gin.H{
-			"id":       userID,
-			"username": "testuser",
-			"email":    "test@example.com",
-			"phone":    "13800138000",
-			"avatar":   "https://example.com/avatar.jpg",
-			"joinTime": "2023-01-15",
+			"id":       user.ID,
+			"username": user.Username,
+			"email":    user.Email,
+			"age":      user.Age,
 		},
 	})
 }

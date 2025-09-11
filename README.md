@@ -5,7 +5,7 @@ todo
 返回 controller  写一个 result
 事务
 错误嵌套 return fmt.Errorf("failed to read config file: %v", err)
-log/slog + 配置文件 slog 封装成一个全局单例
+先手写注入，后面在用框架
 
 	// 最底层的错误
 	rootErr := errors.New("网络连接超时")
@@ -41,4 +41,5 @@ log/slog + 配置文件 slog 封装成一个全局单例
 | ORM   | GORM     | 强大的数据库 ORM 库        |
 | 热重载   | AIR      | Go 应用开发时的实时重载工具     |
 | Redis | Go-Redis | Redis 数据库的 Go 语言客户端 |
+| 依赖注入  | Google Wire | 自动依赖注入框架 |
 

@@ -17,7 +17,8 @@ var Cfg *Config
 type Config struct {
 	App   AppConfig   `mapstructure:"app"`
 	MySQL MySQLConfig `mapstructure:"mysql"`
-	Redis RedisConfig `mapstructure:"redis"` // Redis 配置节点
+	Redis RedisConfig `mapstructure:"redis"`
+	Log   LogConfig   `mapstructure:"log"`
 }
 
 // RedisConfig Redis 配置结构体（与 YAML 中 redis 节点字段对应）
@@ -46,6 +47,11 @@ type MySQLConfig struct {
 	Debug           bool   `mapstructure:"debug"`
 }
 
+type LogConfig struct {
+	Level    string `mapstructure:"level"`
+	Encoding string `mapstructure:"encoding"`
+}
+
 // Init 从配置文件加载配置
 func Init() error {
 	// 1. 从环境变量获取当前环境（默认 dev）
@@ -65,7 +71,7 @@ func Init() error {
 	//读取普通的配置
 	if viper.IsSet("userid") {
 		userid := viper.GetString("userid")
-		fmt.Println(userid)
+		fmt.Println("userid==", userid)
 	}
 	// 4. 绑定环境变量（可选，优先级：环境变量 > 配置文件）
 	viper.AutomaticEnv()      //启用Viper自动读取环境变量的功能

@@ -18,6 +18,8 @@ type User struct {
 	UpdateTime *time.Time `json:"update_time" gorm:"column:update_time" comment:"更新时间"`
 }
 
+//字段有指针 可以存 null 不加指针就会有默认值
+
 // TableName 自定义表名
 func (User) TableName() string {
 	return "users"
