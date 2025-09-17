@@ -2,6 +2,7 @@ package handler
 
 import (
 	"ecommerce/internal/logger"
+	"ecommerce/model/vo"
 	userDao "ecommerce/repository/user"
 	userService "ecommerce/service/user"
 	"errors"
@@ -13,19 +14,26 @@ import (
 
 // UserRegister 用户注册
 func UserRegister(c *gin.Context) {
-	username := c.PostForm("username")
-	_ = c.PostForm("password")
-	email := c.PostForm("email")
+	var userVo vo.UserVo
+	//接收参数
+	if err := c.ShouldBindJSON(userVo); err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"code": 400,
+			"msg":  "参数错误",
+			"data": gin.H{
+				"error": err.Error(),
+			},
+		})
+		return
+	}
+	//验证登录名是否存在
+	//新增 用户
 
 	// 实际项目中会有参数验证、数据库操作等
 	c.JSON(http.StatusOK, gin.H{
 		"code": 200,
 		"msg":  "注册成功",
-		"data": gin.H{
-			"username": username,
-			"email":    email,
-			"createAt": time.Now().Format("2006-01-02 15:04:05"),
-		},
+		"data": gin.H{},
 	})
 }
 

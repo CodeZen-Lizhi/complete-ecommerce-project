@@ -13,6 +13,7 @@ type UserRepository interface {
 	FindByEmail(email string) (*model.User, error)
 	Create(user *model.User) error
 	Update(user *model.User) error
+	izExist(username string) (bool, error)
 }
 
 // 实现接口
@@ -55,4 +56,13 @@ func (r *userRepository) FindByID(id uint) (*model.User, error) {
 	log := logger.GetLogger()
 	log.Debug("查询到用户", "user", user)
 	return &user, tx.Error
+}
+
+func (r *userRepository) izExist(username string) (bool, error) {
+	var user model.User
+	tx := r.db.Where("username = ?", username).First(&user)
+	if tx.Error != nil {
+		return false, tx.Error
+	}
+	return tx.RowsAffected > 0, tx.Error
 }
