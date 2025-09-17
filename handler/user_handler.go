@@ -4,6 +4,7 @@ import (
 	"ecommerce/internal/logger"
 	userDao "ecommerce/repository/user"
 	userService "ecommerce/service/user"
+	"errors"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
@@ -59,6 +60,7 @@ func GetCaptcha(c *gin.Context) {
 
 // GetUserInfo 获取个人信息
 func GetUserInfo(c *gin.Context) {
+	panic(errors.New("模拟错误"))
 	// 从上下文获取用户ID（实际项目中从token解析）
 	log := logger.GetLogger()
 	userID, exists := c.GetQuery("userID")

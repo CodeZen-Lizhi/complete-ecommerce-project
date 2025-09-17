@@ -6,6 +6,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
 	"log"
+	"log/slog"
 	"os"
 	"time"
 )
@@ -33,9 +34,10 @@ type RedisConfig struct {
 
 // AppConfig 应用基本配置
 type AppConfig struct {
-	Name string `mapstructure:"name"`
-	Port int    `mapstructure:"port"`
-	Env  string `mapstructure:"env"`
+	Name      string `mapstructure:"name"`
+	Port      int    `mapstructure:"port"`
+	Env       string `mapstructure:"env"`
+	MachineId int64  `mapstructure:"machine_id"`
 }
 
 // MySQLConfig MySQL数据库配置
@@ -65,7 +67,7 @@ func Init() error {
 	viper.AddConfigPath("./configs")                   // 配置文件目录
 	// 3. 读取配置
 	if err := viper.ReadInConfig(); err != nil {
-		log.Fatalf("读取配置失败：%v", err)
+		slog.Error("读取配置失败：%v", err)
 		return err
 	}
 	//读取普通的配置

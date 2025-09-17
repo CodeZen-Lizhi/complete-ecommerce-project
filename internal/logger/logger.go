@@ -13,7 +13,7 @@ var (
 	once     sync.Once
 )
 
-// InitFromConfigFile 从配置文件初始化日志
+// InitLogConfig 从配置文件初始化日志
 func InitLogConfig() error {
 	cfg := config.Cfg.Log
 	once.Do(func() {
@@ -37,7 +37,6 @@ func InitLogConfig() error {
 				return a
 			}, Level: level})
 		}
-
 		// 创建日志实例
 		instance = slog.New(handler)
 	})
@@ -50,7 +49,7 @@ func GetLogger() *slog.Logger {
 		return slog.Default()
 	}
 	// 设置全局默认日志实例
-	/*slog.SetDefault(instance)*/
+	slog.SetDefault(instance)
 	return instance
 }
 

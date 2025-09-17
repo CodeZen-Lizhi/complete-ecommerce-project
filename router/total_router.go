@@ -7,10 +7,9 @@ import (
 
 // InitTotalRouter 初始化总路由
 func InitTotalRouter() *gin.Engine {
-	r := gin.Default() // 默认包含日志和恢复中间件
-
+	r := gin.New()
 	// 全局中间件：跨域处理
-	r.Use(middleware.CorsMiddleware())
+	r.Use(middleware.CorsMiddleware(), middleware.RequestID(), middleware.GinRecovery(), middleware.GinLogger())
 
 	// 1. 公共路由组（无需登录）
 	public := r.Group("/api/public")

@@ -10,6 +10,7 @@ app:
   name: "gin-api"
   port: 8080
   env: dev
+  machine_id: 1
 
 mysql:
   dsn: "root:123456@tcp(127.0.0.1:3306)/springboot-example?charset=utf8mb4&parseTime=True&loc=Local"
@@ -20,7 +21,7 @@ mysql:
 
 log:
   level: "debug"
-  encoding: "json"
+  encoding: "console"
 
 
 userid: 111
