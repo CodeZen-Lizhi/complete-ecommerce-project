@@ -2,10 +2,12 @@ package handler
 
 import (
 	"ecommerce/internal/logger"
+	"ecommerce/model"
 	"ecommerce/model/vo"
 	userDao "ecommerce/repository/user"
 	userService "ecommerce/service/user"
 	"errors"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
@@ -16,7 +18,7 @@ import (
 func UserRegister(c *gin.Context) {
 	var userVo vo.UserVo
 	//接收参数
-	if err := c.ShouldBindJSON(userVo); err != nil {
+	if err := c.ShouldBindJSON(&userVo); err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"code": 400,
 			"msg":  "参数错误",
@@ -26,9 +28,39 @@ func UserRegister(c *gin.Context) {
 		})
 		return
 	}
+	log := logger.GetLogger()
+	log.Info("用户注册", "userVo", userVo)
+	userRepository := userDao.NewUserRepository()
+	service := userService.NewUserService(userRepository)
 	//验证登录名是否存在
+	if exists, err := service.IzExist(userVo.Username); exists {
+		c.JSON(http.StatusOK, gin.H{
+			"code": 400,
+			"msg":  "用户已存在",
+			"data": gin.H{
+				"error": err.Error(),
+			},
+		})
+		return
+	}
 	//新增 用户
-
+	user := model.User{
+		Username: userVo.Username,
+		Email:    userVo.Email,
+		Password: userVo.Password,
+		Age:      userVo.Age,
+	}
+	if err := service.Create(&user); err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"code": 400,
+			"msg":  "用户创建失败",
+			"data": gin.H{
+				"error": err.Error(),
+			},
+		})
+		return
+	}
+	fmt.Print("33333333")
 	// 实际项目中会有参数验证、数据库操作等
 	c.JSON(http.StatusOK, gin.H{
 		"code": 200,

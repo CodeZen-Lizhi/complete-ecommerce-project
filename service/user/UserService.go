@@ -8,7 +8,8 @@ import (
 // 接口
 type UserService interface {
 	FindByID(id uint) (*model.User, error)
-	izExist(username string) (bool, error)
+	IzExist(username string) (bool, error)
+	Create(user *model.User) error
 }
 
 // 接口实现类
@@ -29,7 +30,11 @@ func (u *userServiceImpl) FindByID(id uint) (*model.User, error) {
 	return u.userRepository.FindByID(id)
 }
 
-func (u *userServiceImpl) izExist(username string) (bool, error) {
-	exist, err := u.userRepository.izExist(username)
+func (u *userServiceImpl) IzExist(username string) (bool, error) {
+	exist, err := u.userRepository.IzExist(username)
 	return exist, err
+}
+
+func (u *userServiceImpl) Create(user *model.User) error {
+	return u.userRepository.Create(user)
 }

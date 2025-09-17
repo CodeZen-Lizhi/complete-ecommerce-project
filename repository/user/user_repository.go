@@ -13,7 +13,7 @@ type UserRepository interface {
 	FindByEmail(email string) (*model.User, error)
 	Create(user *model.User) error
 	Update(user *model.User) error
-	izExist(username string) (bool, error)
+	IzExist(username string) (bool, error)
 }
 
 // 实现接口
@@ -38,13 +38,13 @@ func (r *userRepository) FindByEmail(email string) (*model.User, error) {
 }
 
 func (r *userRepository) Create(user *model.User) error {
-	//TODO implement me
-	panic("implement me")
+	tx := r.db.Create(user)
+	return tx.Error
 }
 
 func (r *userRepository) Update(user *model.User) error {
-	//TODO implement me
-	panic("implement me")
+	tx := r.db.Updates(user)
+	return tx.Error
 }
 
 func (r *userRepository) FindByID(id uint) (*model.User, error) {
@@ -58,9 +58,9 @@ func (r *userRepository) FindByID(id uint) (*model.User, error) {
 	return &user, tx.Error
 }
 
-func (r *userRepository) izExist(username string) (bool, error) {
+func (r *userRepository) IzExist(username string) (bool, error) {
 	var user model.User
-	tx := r.db.Where("username = ?", username).First(&user)
+	tx := r.db.Where("username = ? and del_flag = ?", username, "0").First(&user)
 	if tx.Error != nil {
 		return false, tx.Error
 	}

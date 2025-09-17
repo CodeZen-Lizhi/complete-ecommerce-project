@@ -9,7 +9,7 @@ import (
 func InitTotalRouter() *gin.Engine {
 	r := gin.New()
 	// 全局中间件：跨域处理
-	r.Use(middleware.CorsMiddleware(), middleware.RequestID(), middleware.GinRecovery(), middleware.GinLogger())
+	r.Use(middleware.CorsMiddleware(), middleware.RequestID(), gin.Recovery(), middleware.GinLogger())
 
 	// 1. 公共路由组（无需登录）
 	public := r.Group("/api/public")

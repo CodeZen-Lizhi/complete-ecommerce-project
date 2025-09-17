@@ -14,9 +14,9 @@ type DictItem struct {
 	Sort          *int       `json:"sort" gorm:"column:sort;default:0" comment:"排序序号"`
 	DelFlag       *string    `json:"del_flag" gorm:"column:del_flag;type:char;default:'0'" comment:"删除标志（0-未删除，1-已删除）"`
 	CreateId      *int64     `json:"create_id" gorm:"column:create_id" comment:"创建人ID"`
-	CreateTime    *time.Time `json:"create_time" gorm:"column:create_time;default:CURRENT_TIMESTAMP" comment:"创建时间"`
+	CreateTime    *time.Time `json:"create_time" gorm:"column:create_time;type:datetime" comment:"创建时间"`
 	UpdateId      *int64     `json:"update_id" gorm:"column:update_id" comment:"更新人ID"`
-	UpdateTime    *time.Time `json:"update_time" gorm:"column:update_time;default:CURRENT_TIMESTAMP;autoUpdateTime" comment:"更新时间"`
+	UpdateTime    *time.Time `json:"update_time" gorm:"column:update_time;type:datetime;" comment:"更新时间"`
 }
 
 // TableName 指定表名
