@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"ecommerce/internal/logger"
+	"ecommerce/util"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -38,27 +39,32 @@ func CorsMiddleware() gin.HandlerFunc {
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 获取Authorization头
+		// 1. 从请求头获取Authorization
 		token := c.GetHeader("Authorization")
-		// 简单验证token（实际项目中应该解析和验证token）
-		/*if token == "" || token != "valid_token" {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"code": 401,
-				"msg":  "未授权访问，请先登录",
-			})
+		if token == "" {
+			c.JSON(401, gin.H{"msg": "缺少Authorization头"})
 			c.Abort()
 			return
-		}*/
-		// 第二种写法
-		if token != "valid_token" {
+		}
+		// 2. 剥离Bearer前缀（格式：Bearer <token>）
+		var tokenString string
+		_, err := fmt.Sscanf(token, "Bearer %s", &tokenString)
+		if err != nil || tokenString == "" {
+			c.JSON(401, gin.H{"msg": "Authorization格式错误（应为Bearer <token>）"})
+			c.Abort()
+			return
+		}
+		// 3. 调用工具类解析令牌
+		userID, err := util.ParseToken(tokenString)
+		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"code": 401,
 				"msg":  "未授权访问，请先登录",
 			})
 			return
 		}
-
 		// 可以在这里解析token获取用户信息并设置到上下文
-		c.Set("userID", 10001) // 示例用户ID
+		c.Set(util.CurrentUserId, userID)
 		c.Next()
 	}
 }

@@ -6,12 +6,10 @@ import (
 	"ecommerce/model/vo"
 	userDao "ecommerce/repository/user"
 	userService "ecommerce/service/user"
-	"errors"
-	"fmt"
+	"ecommerce/util"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
-	"time"
 )
 
 // UserRegister 用户注册
@@ -30,8 +28,8 @@ func UserRegister(c *gin.Context) {
 	}
 	log := logger.GetLogger()
 	log.Info("用户注册", "userVo", userVo)
-	userRepository := userDao.NewUserRepository()
-	service := userService.NewUserService(userRepository)
+	dao := userDao.NewUserRepository()
+	service := userService.NewUserService(dao)
 	//验证登录名是否存在
 	if exists, err := service.IzExist(userVo.Username); exists {
 		c.JSON(http.StatusOK, gin.H{
@@ -60,8 +58,6 @@ func UserRegister(c *gin.Context) {
 		})
 		return
 	}
-	fmt.Print("33333333")
-	// 实际项目中会有参数验证、数据库操作等
 	c.JSON(http.StatusOK, gin.H{
 		"code": 200,
 		"msg":  "注册成功",
@@ -72,18 +68,16 @@ func UserRegister(c *gin.Context) {
 // UserLogin 用户登录
 func UserLogin(c *gin.Context) {
 	username := c.PostForm("username")
-	_ = c.PostForm("password")
-
-	// 实际项目中会验证用户名密码并生成token
-	c.JSON(http.StatusOK, gin.H{
-		"code": 200,
-		"msg":  "登录成功",
-		"data": gin.H{
-			"token":    "valid_token", // 实际项目中是加密的token
-			"username": username,
-			"expireAt": time.Now().Add(24 * time.Hour).Format("2006-01-02 15:04:05"),
-		},
-	})
+	password := c.PostForm("password")
+	dao := userDao.NewUserRepository()
+	service := userService.NewUserService(dao)
+	user, err := service.Login(username, password)
+	if err != nil {
+		Fail(c, "用户名或密码错误")
+		return
+	}
+	token, err := util.GenerateToken(strconv.Itoa(int(user.ID)))
+	Success(c, token)
 }
 
 // GetCaptcha 获取验证码
@@ -100,32 +94,24 @@ func GetCaptcha(c *gin.Context) {
 
 // GetUserInfo 获取个人信息
 func GetUserInfo(c *gin.Context) {
-	panic(errors.New("模拟错误"))
-	// 从上下文获取用户ID（实际项目中从token解析）
+	// 从上下文获取用户ID
 	log := logger.GetLogger()
-	userID, exists := c.GetQuery("userID")
+	userID, exists := c.Get(util.CurrentUserId)
 	if !exists {
 		log.Error("未获取到用户id")
+		Fail(c, "未获取到用户id")
 		return
 	}
-	userId, err := strconv.ParseUint(userID, 10, 32)
 	//手写注入
 	userRepository := userDao.NewUserRepository()
 	service := userService.NewUserService(userRepository)
-	user, err := service.FindByID(uint(userId))
+	user, err := service.FindByID(userID.(uint64))
 	if err != nil {
 		log.Error("用户不存在")
+		Fail(c, "用户不存在")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"code": 200,
-		"data": gin.H{
-			"id":       user.ID,
-			"username": user.Username,
-			"email":    user.Email,
-			"age":      user.Age,
-		},
-	})
+	Success(c, user)
 }
 
 // UpdateUserInfo 更新个人信息

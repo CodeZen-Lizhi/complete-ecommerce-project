@@ -9,11 +9,12 @@ import (
 
 // UserRepository 定义接口
 type UserRepository interface {
-	FindByID(id uint) (*model.User, error)
+	FindByID(id uint64) (*model.User, error)
 	FindByEmail(email string) (*model.User, error)
 	Create(user *model.User) error
 	Update(user *model.User) error
 	IzExist(username string) (bool, error)
+	Login(username string, password string) (*model.User, error)
 }
 
 // 实现接口
@@ -21,7 +22,7 @@ type userRepository struct {
 	db *gorm.DB
 }
 
-// 构造函数注入
+// NewUserRepository 构造函数注入
 func NewUserRepository() UserRepository {
 	return &userRepository{
 		db: mysql.DB,
@@ -47,7 +48,7 @@ func (r *userRepository) Update(user *model.User) error {
 	return tx.Error
 }
 
-func (r *userRepository) FindByID(id uint) (*model.User, error) {
+func (r *userRepository) FindByID(id uint64) (*model.User, error) {
 	var user model.User
 	tx := r.db.First(&user, id)
 	if tx.Error != nil {
@@ -65,4 +66,13 @@ func (r *userRepository) IzExist(username string) (bool, error) {
 		return false, tx.Error
 	}
 	return tx.RowsAffected > 0, tx.Error
+}
+
+func (r *userRepository) Login(username string, password string) (*model.User, error) {
+	var user model.User
+	tx := r.db.Where("username = ? and password = ? and del_flag = ?", username, password, "0").First(&user)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	return &user, tx.Error
 }

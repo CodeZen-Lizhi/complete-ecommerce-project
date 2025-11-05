@@ -30,8 +30,6 @@ func (User) TableName() string {
 // BeforeCreate 创建前钩子：自动填充创建时间和更新时间
 func (u *User) BeforeCreate(tx *gorm.DB) error {
 	now := time.Now() // 获取当前时间（time.Time类型）
-	//ysqlTime := now.Format(time.DateTime)
-
 	delFlag := "1"
 	u.CreateTime = &now
 	u.UpdateTime = &now
