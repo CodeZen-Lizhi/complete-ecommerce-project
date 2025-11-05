@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"ecommerce/container"
 	"ecommerce/internal/logger"
 	"ecommerce/model"
 	"ecommerce/model/vo"
@@ -13,6 +14,20 @@ import (
 	"strconv"
 	"time"
 )
+
+// GetContainer 从 Context 中获取容器
+func GetContainer(c *gin.Context) (*container.Container, error) {
+	val, exists := c.Get(container.ContainerKey)
+	if !exists {
+		return nil, errors.New("容器未注入")
+	}
+
+	ctn, ok := val.(*container.Container)
+	if !ok {
+		return nil, errors.New("容器类型错误")
+	}
+	return ctn, nil
+}
 
 // UserRegister 用户注册
 func UserRegister(c *gin.Context) {
@@ -32,8 +47,17 @@ func UserRegister(c *gin.Context) {
 	log.Info("用户注册", "userVo", userVo)
 	userRepository := userDao.NewUserRepository()
 	service := userService.NewUserService(userRepository)
+	//ctn, err := GetContainer(c)
+
 	//验证登录名是否存在
 	if exists, err := service.IzExist(userVo.Username); exists {
+		c.JSON(http.StatusOK, gin.H{
+			"code": 400,
+			"msg":  "用户已存在",
+			"data": gin.H{},
+		})
+		return
+	} else if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"code": 400,
 			"msg":  "用户已存在",

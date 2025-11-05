@@ -1,6 +1,7 @@
 package main
 
 import (
+	"ecommerce/container"
 	"ecommerce/internal/config"
 	"ecommerce/internal/logger"
 	"ecommerce/internal/mysql"
@@ -45,8 +46,10 @@ func main() {
 		if err := mysql.Close(); err != nil {
 		}
 	}()
+	// 3. 初始化容器 依赖注入
+	ctn := container.GetInstance()
 	// 初始化路由
-	r := router.InitTotalRouter(log)
+	r := router.InitTotalRouter(log, ctn)
 	// 启动服务器
 	log.Info("服务器启动成功", "APP-NAME", config.Cfg.App.Name, "APP-PORT", config.Cfg.App.Port)
 	// 服务器启动是阻塞操作，只有失败才会返回

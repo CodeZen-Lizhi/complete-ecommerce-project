@@ -13,28 +13,28 @@ type UserService interface {
 }
 
 // 接口实现类
-type userServiceImpl struct {
+type UserServiceImpl struct {
 	userRepository user.UserRepository
 }
 
 // 确保实现类实现了接口
-var _ UserService = (*userServiceImpl)(nil)
+var _ UserService = (*UserServiceImpl)(nil)
 
-func NewUserService(userRepository user.UserRepository) UserService {
-	return &userServiceImpl{
+func NewUserService(userRepository user.UserRepository) *UserServiceImpl {
+	return &UserServiceImpl{
 		userRepository: userRepository,
 	}
 }
 
-func (u *userServiceImpl) FindByID(id uint) (*model.User, error) {
+func (u *UserServiceImpl) FindByID(id uint) (*model.User, error) {
 	return u.userRepository.FindByID(id)
 }
 
-func (u *userServiceImpl) IzExist(username string) (bool, error) {
+func (u *UserServiceImpl) IzExist(username string) (bool, error) {
 	exist, err := u.userRepository.IzExist(username)
 	return exist, err
 }
 
-func (u *userServiceImpl) Create(user *model.User) error {
+func (u *UserServiceImpl) Create(user *model.User) error {
 	return u.userRepository.Create(user)
 }

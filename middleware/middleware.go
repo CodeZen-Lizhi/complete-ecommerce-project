@@ -3,6 +3,7 @@ package middleware
 import (
 	"bufio"
 	"context"
+	"ecommerce/container"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -87,8 +88,8 @@ func AdminAuthMiddleware() gin.HandlerFunc {
 	//todo 写一个统计方法用时的中间件
 }
 
-// RequestID 在 Gin 中间件中生成 request_id 链路追踪
-func RequestID() gin.HandlerFunc {
+// RequestIdMiddleware 在 Gin 中间件中生成 request_id 链路追踪
+func RequestIdMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 优先使用客户端传入的 X-Request-ID
 		rid := c.GetHeader("X-Request-ID")
@@ -99,6 +100,14 @@ func RequestID() gin.HandlerFunc {
 		c.Request = c.Request.WithContext(context.WithValue(c.Request.Context(), "request_id", rid))
 
 		// 日志中加入 request_id
+		c.Next()
+	}
+}
+
+// InjectContainerMiddleware 将容器注入 Gin Context
+func InjectContainerMiddleware(ctn *container.Container) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Set(container.ContainerKey, ctn)
 		c.Next()
 	}
 }

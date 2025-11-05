@@ -1,16 +1,17 @@
 package router
 
 import (
+	"ecommerce/container"
 	"ecommerce/middleware"
 	"github.com/gin-gonic/gin"
 	"log/slog"
 )
 
 // InitTotalRouter 初始化总路由
-func InitTotalRouter(logger *slog.Logger) *gin.Engine {
+func InitTotalRouter(logger *slog.Logger, container *container.Container) *gin.Engine {
 	r := gin.New()
 	// 全局中间件：跨域处理
-	r.Use(middleware.CorsMiddleware(), middleware.RequestID(), gin.Recovery(), middleware.GinRecovery(logger), middleware.GinLogger(logger))
+	r.Use(middleware.CorsMiddleware(), middleware.RequestIdMiddleware(), gin.Recovery(), middleware.GinRecovery(logger), middleware.GinLogger(logger), middleware.InjectContainerMiddleware(container))
 
 	// 1. 公共路由组（无需登录）
 	public := r.Group("/api/public")
