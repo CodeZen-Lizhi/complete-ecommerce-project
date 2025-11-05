@@ -1,13 +1,16 @@
 package middleware
 
 import (
+	"bufio"
 	"context"
-	"ecommerce/internal/logger"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"log/slog"
 	"net/http"
+	"os"
+	"runtime/debug"
+	"strings"
 	"time"
 )
 
@@ -100,56 +103,6 @@ func RequestID() gin.HandlerFunc {
 	}
 }
 
-// GinLogger 优化后的请求日志中间件
-func GinLogger() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		// 1. 初始化日志字段（预分配空间减少内存分配）
-		fields := make([]any, 0, 8)
-
-		// 2. 记录请求开始时间和基本信息
-		startTime := time.Now()
-		req := c.Request
-		fields = append(fields,
-			slog.String("method", req.Method),
-			slog.String("path", req.URL.Path),
-			slog.String("request_id", c.GetString("X-Request-ID")),
-		)
-
-		// 3. 使用自定义writer捕获响应大小
-		w := &responseWriter{ResponseWriter: c.Writer}
-		c.Writer = w
-
-		// 4. 处理请求
-		c.Next()
-
-		// 5. 补充响应信息
-		latency := time.Since(startTime)
-		fields = append(fields,
-			slog.Int("status_code", c.Writer.Status()),
-			slog.Duration("latency", latency),
-			slog.Int("response_size", w.size),
-		)
-
-		// 6. 记录错误信息（如果有）
-		if len(c.Errors) > 0 {
-			fields = append(fields, slog.String("error", c.Errors.String()))
-		}
-		// 7. 根据状态码选择日志级别
-		log := logger.GetLogger()
-		switch {
-		case c.Writer.Status() >= http.StatusInternalServerError:
-			log.ErrorContext(c.Request.Context(), "请求处理异常", fields...)
-		case c.Writer.Status() >= http.StatusBadRequest:
-			log.WarnContext(c.Request.Context(), "客户端请求错误", fields...)
-		case latency > 500*time.Millisecond: // 慢请求告警
-			fields = append(fields, slog.Bool("slow_request", true))
-			log.WarnContext(c.Request.Context(), "请求处理耗时过长", fields...)
-		default:
-			log.InfoContext(c.Request.Context(), "请求处理完成", fields...)
-		}
-	}
-}
-
 // 辅助类型：用于捕获响应大小（保留原有功能）
 type responseWriter struct {
 	gin.ResponseWriter
@@ -168,24 +121,156 @@ func (w *responseWriter) WriteString(s string) (int, error) {
 	return n, err
 }
 
-func GinRecovery() gin.HandlerFunc {
+// GinRecovery 是一个能精确定位错误的 Panic 恢复中间件
+func GinRecovery(logger *slog.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		defer func() {
-			var err error
-			if panicVal := recover(); panicVal != nil {
-				switch val := panicVal.(type) {
+			if r := recover(); r != nil {
+				// 1. 将 panic 转换为 error
+				var err error
+				switch v := r.(type) {
 				case error:
-					err = fmt.Errorf("%w", val)
+					err = v
 				default:
-					err = fmt.Errorf("%v", val)
+					err = fmt.Errorf("%v", v)
 				}
-				//输出结构化日志（无!BADKEY，符合slog规范）
-				logPanic(c, logger.GetLogger(), err)
-				//返回标准化500响应
-				sendErrorResponse(c, c.GetString("X-Request-ID"))
+
+				// 2. 捕获并过滤堆栈信息
+				stack := debug.Stack()
+				filteredStack := filterStack(string(stack))
+
+				// 3. 记录包含精简堆栈的结构化日志
+				requestID := c.GetString("X-Request-ID")
+				logger.ErrorContext(
+					c.Request.Context(),
+					"Panic Recovered",
+					slog.Any("error", err),
+					slog.String("request_id", requestID),
+					slog.String("method", c.Request.Method),
+					slog.String("path", c.Request.URL.Path),
+					slog.String("stacktrace", filteredStack), // 关键：记录过滤后的堆栈
+				)
+
+				// 4. 返回标准化的 500 错误响应
+				sendErrorResponse(c, requestID)
 			}
 		}()
 		c.Next()
+	}
+}
+
+// filterStack 通过分析堆栈，精准定位到触发 panic 的业务代码行
+func filterStack(stack string) string {
+	projectModulePath := findModulePath()
+	if projectModulePath == "" {
+		return stack // 如果找不到模块路径，返回原始堆栈
+	}
+
+	var relevantStack []string
+	lines := strings.Split(stack, "\n")
+
+	// 保留 goroutine 状态行
+	if len(lines) > 0 {
+		relevantStack = append(relevantStack, lines[0])
+	}
+
+	// 从堆栈中找到 panic 的直接原因
+	// 策略：在原始堆栈中，panic 的源头通常紧跟在 go runtime 的 panic() 函数帧之后
+	var panicFrameFound bool
+	for i := 1; i < len(lines)-1; i += 2 {
+		functionLine := lines[i]
+		fileLine := lines[i+1]
+
+		// 标记 panic() 函数帧的位置
+		if strings.Contains(functionLine, "panic(") && strings.Contains(fileLine, "runtime/panic.go") {
+			panicFrameFound = true
+			continue
+		}
+
+		// 在找到 panic 帧后，第一个不属于中间件目录且属于我们自己项目的帧就是源头
+		isMiddleware := strings.Contains(fileLine, "/middleware/") // 关键：过滤掉所有中间件目录下的文件
+		isProjectCode := strings.Contains(fileLine, projectModulePath)
+
+		if panicFrameFound && isProjectCode && !isMiddleware {
+			relevantStack = append(relevantStack, functionLine)
+			relevantStack = append(relevantStack, fileLine)
+			// 成功找到，跳出循环
+			break
+		}
+	}
+
+	// 如果新策略未找到（例如 panic 直接发生在中间件中），则返回原始堆栈以防信息丢失
+	if len(relevantStack) <= 1 {
+		return stack
+	}
+
+	return strings.Join(relevantStack, "\n")
+}
+
+// findModulePath 从 go.mod 文件中读取模块路径
+func findModulePath() string {
+	file, err := os.Open("go.mod")
+	if err != nil {
+		return ""
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	if scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(line, "module ") {
+			return strings.TrimSpace(strings.TrimPrefix(line, "module "))
+		}
+	}
+	return ""
+}
+
+// GinLogger 是一个高度优化的结构化日志中间件
+func GinLogger(logger *slog.Logger) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		startTime := time.Now()
+		req := c.Request
+		requestID := c.GetString("X-Request-ID") // 假设由其他中间件设置
+
+		// 使用自定义 writer 捕获响应大小
+		w := &responseWriter{ResponseWriter: c.Writer}
+		c.Writer = w
+
+		c.Next()
+
+		latency := time.Since(startTime)
+		statusCode := c.Writer.Status()
+
+		// 使用 slog.Attr 组织日志字段，更具可读性
+		attrs := []slog.Attr{
+			slog.String("request_id", requestID),
+			slog.String("method", req.Method),
+			slog.String("path", req.URL.Path),
+			slog.Int("status_code", statusCode),
+			slog.Duration("latency", latency),
+			slog.Int("response_size", w.size),
+		}
+
+		if len(c.Errors) > 0 {
+			attrs = append(attrs, slog.String("error", c.Errors.ByType(gin.ErrorTypePrivate).String()))
+		}
+
+		// 根据状态码和延迟选择日志级别
+		msg := "请求处理完成"
+		level := slog.LevelInfo
+		switch {
+		case statusCode >= http.StatusInternalServerError:
+			msg = "请求处理异常"
+			level = slog.LevelError
+		case statusCode >= http.StatusBadRequest:
+			msg = "客户端请求错误"
+			level = slog.LevelWarn
+		case latency > 500*time.Millisecond:
+			msg = "请求处理耗时过长"
+			level = slog.LevelWarn
+			attrs = append(attrs, slog.Bool("slow_request", true))
+		}
+		logger.LogAttrs(c.Request.Context(), level, msg, attrs...)
 	}
 }
 
