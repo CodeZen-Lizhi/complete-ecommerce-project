@@ -1,0 +1,47 @@
+# .air.toml —— 为 complete-ecommerce-project 优化
+
+root = "."
+tmp_dir = ".air"
+
+[build]
+  # 构建命令
+  cmd = "go build -o ./.air/app ."
+  # 编译后的二进制路径
+  bin = "./.air/app"
+  # 启动二进制时的完整命令（可加环境变量）
+  full_bin = "./.air/app"
+  # 文件变化后延迟多少毫秒再构建（防频繁触发）
+  delay = 500
+  # 监听的文件扩展名
+  include_ext = ["go", "html", "tmpl", "tpl", "yaml", "yml", "json", "env", "toml"]
+  # 忽略的目录（相对于 root）
+  exclude_dir = [
+    "node_modules",
+    ".git",
+    ".air",        # 自身临时目录，避免循环监听
+    "logs",
+    "public",
+    "uploads",
+    "dist",
+    "assets"
+  ]
+  # 忽略的文件正则（比如测试文件）
+  exclude_regex = ["_test.go"]
+  # 构建出错时是否停止运行旧进程
+  stop_on_error = true
+  # 构建日志输出到文件（可选）
+  log = ".air/build.log"
+
+[color]
+  main = "magenta"
+  watcher = "cyan"
+  build = "yellow"
+  runner = "green"
+
+[misc]
+  # 退出时自动删除 .air 目录
+  clean_on_exit = true
+
+[screen]
+  # 重启时清屏，保持终端干净
+  clear_on_rebuild = true
