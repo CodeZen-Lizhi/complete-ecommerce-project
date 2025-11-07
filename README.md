@@ -6,7 +6,11 @@ todo
 事务
 GinRecovery 这还是不完善，没有堆栈信息
 先手写注入，后面在用框架
-
+jwt-go 引入
+Makefile 核心是通过 make 命令执行预定义的指令，简化 Go 项目的编译、打包、测试等操作。
+ 试试 Makefile
+Google Wire 引入
+试试 air
 技术栈：
 
 | 技术类别  | 使用组件     | 说明                  |
