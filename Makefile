@@ -45,6 +45,12 @@ dev: ## 开发模式运行（使用 Air 热重载）
 		air; \
 	fi
 
+dev-stop: ## 强制停止开发模式进程
+	@echo "停止开发模式进程..."
+	@pkill -f "air" || true  # 查找并终止 air 进程，即使没有进程也不报错
+	@rm -rf $(AIR_TMP_DIR)  # 清理 air 临时文件
+	@echo "开发模式已停止"
+
 run: build ## 构建并运行应用
 	@echo "运行应用..."
 	$(BUILD_DIR)/$(BINARY_NAME)
