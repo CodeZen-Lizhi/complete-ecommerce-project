@@ -3,7 +3,7 @@ package middleware
 import (
 	"bufio"
 	"context"
-	"ecommerce/internal/logger"
+	"ecommerce/container"
 	"ecommerce/util"
 	"fmt"
 	"github.com/gin-gonic/gin"

@@ -8,6 +8,7 @@ import (
 	userDao "ecommerce/repository/user"
 	userService "ecommerce/service/user"
 	"ecommerce/util"
+	"errors"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
@@ -45,8 +46,6 @@ func UserRegister(c *gin.Context) {
 	log.Info("用户注册", "userVo", userVo)
 	dao := userDao.NewUserRepository()
 	service := userService.NewUserService(dao)
-	userRepository := userDao.NewUserRepository()
-	service := userService.NewUserService(userRepository)
 	//ctn, err := GetContainer(c)
 
 	//验证登录名是否存在

@@ -41,5 +41,5 @@ func (u *UserServiceImpl) Create(user *model.User) error {
 }
 
 func (u *UserServiceImpl) Login(username string, password string) (*model.User, error) {
-	return u.UserServiceImpl.Login(username, password)
+	return u.userRepository.Login(username, password)
 }
