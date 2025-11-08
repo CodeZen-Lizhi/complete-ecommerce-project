@@ -17,38 +17,38 @@ type UserRepository interface {
 	Login(username string, password string) (*model.User, error)
 }
 
-// 实现接口
-type userRepository struct {
+// UserRepositoryImpl 实现接口
+type UserRepositoryImpl struct {
 	db *gorm.DB
 }
 
 // NewUserRepository 构造函数注入
 func NewUserRepository() UserRepository {
-	return &userRepository{
+	return &UserRepositoryImpl{
 		db: mysql.DB,
 	}
 }
 
 // 此段代码可以确保结构体实现了接口的所有方法，否则编译会出错
-var _ UserRepository = (*userRepository)(nil)
+var _ UserRepository = (*UserRepositoryImpl)(nil)
 
-func (r *userRepository) FindByEmail(email string) (*model.User, error) {
+func (r *UserRepositoryImpl) FindByEmail(email string) (*model.User, error) {
 	//mysql.DB.select("id", "email", "password").Where("email = ?", email).First(&model.User{})
 
 	panic("implement me")
 }
 
-func (r *userRepository) Create(user *model.User) error {
+func (r *UserRepositoryImpl) Create(user *model.User) error {
 	tx := r.db.Create(user)
 	return tx.Error
 }
 
-func (r *userRepository) Update(user *model.User) error {
+func (r *UserRepositoryImpl) Update(user *model.User) error {
 	tx := r.db.Updates(user)
 	return tx.Error
 }
 
-func (r *userRepository) FindByID(id uint64) (*model.User, error) {
+func (r *UserRepositoryImpl) FindByID(id uint64) (*model.User, error) {
 	var user model.User
 	tx := r.db.First(&user, id)
 	if tx.Error != nil {
@@ -59,7 +59,7 @@ func (r *userRepository) FindByID(id uint64) (*model.User, error) {
 	return &user, tx.Error
 }
 
-func (r *userRepository) IzExist(username string) (bool, error) {
+func (r *UserRepositoryImpl) IzExist(username string) (bool, error) {
 	var user model.User
 	tx := r.db.Where("username = ? and del_flag = ?", username, "0").First(&user)
 	if tx.Error != nil {
@@ -68,7 +68,7 @@ func (r *userRepository) IzExist(username string) (bool, error) {
 	return tx.RowsAffected > 0, tx.Error
 }
 
-func (r *userRepository) Login(username string, password string) (*model.User, error) {
+func (r *UserRepositoryImpl) Login(username string, password string) (*model.User, error) {
 	var user model.User
 	tx := r.db.Where("username = ? and password = ? and del_flag = ?", username, password, "0").First(&user)
 	if tx.Error != nil {

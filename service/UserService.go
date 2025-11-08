@@ -2,7 +2,7 @@ package service
 
 import (
 	"ecommerce/model"
-	"ecommerce/repository/user"
+	"ecommerce/repository"
 )
 
 // 接口
@@ -15,13 +15,13 @@ type UserService interface {
 
 // 接口实现类
 type UserServiceImpl struct {
-	userRepository user.UserRepository
+	userRepository repository.UserRepository
 }
 
 // 确保实现类实现了接口
 var _ UserService = (*UserServiceImpl)(nil)
 
-func NewUserService(userRepository user.UserRepository) *UserServiceImpl {
+func NewUserService(userRepository repository.UserRepository) UserService {
 	return &UserServiceImpl{
 		userRepository: userRepository,
 	}

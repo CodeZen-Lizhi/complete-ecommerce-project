@@ -1,4 +1,5 @@
 # Go 电商项目 Makefile
+#Makefile 核心是通过 make 命令执行预定义的指令，简化 Go 项目的编译、打包、测试等操作。
 .PHONY: help build run clean test lint deps dev prod docker-build docker-run swagger
 
 # 变量定义

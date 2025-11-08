@@ -4,33 +4,17 @@ import (
 	"ecommerce/container"
 	"ecommerce/internal/logger"
 	"ecommerce/model"
-	"ecommerce/model/vo"
-	userDao "ecommerce/repository/user"
-	userService "ecommerce/service/user"
+	"ecommerce/repository"
+	"ecommerce/service"
 	"ecommerce/util"
-	"errors"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
 )
 
-// GetContainer 从 Context 中获取容器
-func GetContainer(c *gin.Context) (*container.Container, error) {
-	val, exists := c.Get(container.ContainerKey)
-	if !exists {
-		return nil, errors.New("容器未注入")
-	}
-
-	ctn, ok := val.(*container.Container)
-	if !ok {
-		return nil, errors.New("容器类型错误")
-	}
-	return ctn, nil
-}
-
 // UserRegister 用户注册
 func UserRegister(c *gin.Context) {
-	var userVo vo.UserVo
+	var userVo model.UserVo
 	//接收参数
 	if err := c.ShouldBindJSON(&userVo); err != nil {
 		c.JSON(http.StatusOK, gin.H{
@@ -44,8 +28,8 @@ func UserRegister(c *gin.Context) {
 	}
 	log := logger.GetLogger()
 	log.Info("用户注册", "userVo", userVo)
-	dao := userDao.NewUserRepository()
-	service := userService.NewUserService(dao)
+	dao := repository.NewUserRepository()
+	service := service.NewUserService(dao)
 	//ctn, err := GetContainer(c)
 
 	//验证登录名是否存在
@@ -87,8 +71,8 @@ func UserRegister(c *gin.Context) {
 func UserLogin(c *gin.Context) {
 	username := c.PostForm("username")
 	password := c.PostForm("password")
-	dao := userDao.NewUserRepository()
-	service := userService.NewUserService(dao)
+	dao := repository.NewUserRepository()
+	service := service.NewUserService(dao)
 	user, err := service.Login(username, password)
 	if err != nil {
 		Fail(c, "用户名或密码错误")
@@ -120,10 +104,15 @@ func GetUserInfo(c *gin.Context) {
 		Fail(c, "未获取到用户id")
 		return
 	}
+	con, err2 := container.GetContainer(c)
+	if err2 != nil {
+		log.Error("容器未注入")
+		Fail(c, "容器未注入")
+		return
+	}
 	//手写注入
-	userRepository := userDao.NewUserRepository()
-	service := userService.NewUserService(userRepository)
-	user, err := service.FindByID(userID.(uint64))
+	userService := con.UserService
+	user, err := userService.FindByID(userID.(uint64))
 	if err != nil {
 		log.Error("用户不存在")
 		Fail(c, "用户不存在")
