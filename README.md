@@ -1,10 +1,8 @@
 项目demo
 todo 
 公共的封装的增删改查方法
-规范使用方式  按层级调用过去 
-返回 controller  写一个 result
+规范使用方式  按层级调用过去
 事务
-GinRecovery 这还是不完善，没有堆栈信息
 先手写注入，后面在用框架
 jwt-go 引入
 Makefile 核心是通过 make 命令执行预定义的指令，简化 Go 项目的编译、打包、测试等操作。
@@ -20,5 +18,3 @@ Google Wire 引入
 | 热重载   | AIR      | Go 应用开发时的实时重载工具     |
 | Redis | Go-Redis | Redis 数据库的 Go 语言客户端 |
 | 依赖注入  | Google Wire | 自动依赖注入框架 |
-
-todo 把小文件夹删了
