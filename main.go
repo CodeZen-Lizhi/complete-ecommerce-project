@@ -10,6 +10,8 @@ import (
 	"ecommerce/util"
 	"fmt"
 	"log/slog"
+	"net/http"
+	_ "net/http/pprof"
 )
 
 func main() {
@@ -50,6 +52,13 @@ func main() {
 	ctn := container.GetInstance()
 	// 初始化路由
 	r := router.InitTotalRouter(log, ctn)
+	// 启动pprof 语言内置的性能分析工具包，用于在运行时收集程序的 CPU、内存、goroutine、阻塞、互斥锁
+	go func() {
+		log.Info("🚀 pprof 启动: http://localhost:6060/debug/pprof/")
+		if err := http.ListenAndServe("localhost:6060", nil); err != nil {
+			log.Error("pprof 服务启动失败: %v", err)
+		}
+	}()
 	// 启动服务器
 	log.Info("服务器启动成功", "APP-NAME", config.Cfg.App.Name, "APP-PORT", config.Cfg.App.Port)
 	// 服务器启动是阻塞操作，只有失败才会返回
