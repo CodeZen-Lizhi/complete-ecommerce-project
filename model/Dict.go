@@ -20,6 +20,6 @@ type Dict struct {
 }
 
 // TableName 指定表名
-func (Dict) TableName() string {
+func (d *Dict) TableName() string {
 	return "s_dict"
 }

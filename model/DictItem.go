@@ -20,12 +20,12 @@ type DictItem struct {
 }
 
 // TableName 指定表名
-func (DictItem) TableName() string {
+func (d *DictItem) TableName() string {
 	return "s_dict_item"
 }
 
 // Indexes 定义联合唯一索引（与数据库约束uk_dict_code_item_code对应）
-func (DictItem) Indexes() map[string]interface{} {
+func (d *DictItem) Indexes() map[string]interface{} {
 	return map[string]interface{}{
 		"uk_dict_code_item_code": []string{"dict_code", "dict_item_code"},
 	}

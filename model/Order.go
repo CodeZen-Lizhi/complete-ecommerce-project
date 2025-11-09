@@ -22,12 +22,12 @@ type Order struct {
 }
 
 // TableName 指定表名
-func (Order) TableName() string {
+func (o *Order) TableName() string {
 	return "t_order"
 }
 
 // Indexes 定义索引
-func (Order) Indexes() map[string]interface{} {
+func (o *Order) Indexes() map[string]interface{} {
 	return map[string]interface{}{
 		"idx_user_id":  []string{"user_id"},
 		"idx_del_flag": []string{"del_flag"},

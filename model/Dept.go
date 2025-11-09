@@ -20,6 +20,6 @@ type Dept struct {
 }
 
 // TableName 指定表名
-func (Dept) TableName() string {
+func (d *Dept) TableName() string {
 	return "s_dept"
 }

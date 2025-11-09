@@ -23,7 +23,7 @@ type User struct {
 //字段有指针 可以存 null 不加指针就会有默认值
 
 // TableName 自定义表名
-func (User) TableName() string {
+func (u *User) TableName() string {
 	return "users"
 }
 
@@ -46,6 +46,9 @@ func (u *User) BeforeUpdate(tx *gorm.DB) error {
 }
 
 type UserVo struct {
+	//`,string` 表示在 JSON 序列化和反序列化过程中，该 `int64` 类型的字段将被当作字符串处理。
+	//这通常用于防止 JavaScript 等语言在处理大整数时出现精度丢失的问题
+	ID       int64  `json:"id,string"`
 	Username string `json:"username"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
