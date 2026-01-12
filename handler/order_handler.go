@@ -127,7 +127,7 @@ func CancelOrder(c *gin.Context) {
 	// 实际项目中应该有订单状态检查和取消逻辑
 	c.JSON(http.StatusOK, gin.H{
 		"code": 200,
-		"msg": fmt.Sprintf("用户 %v 的订单 %s 已取消", userId, id),
+		"msg":  fmt.Sprintf("用户 %v 的订单 %s 已取消", userId, id),
 	})
 }
 

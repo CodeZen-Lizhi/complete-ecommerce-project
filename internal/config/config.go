@@ -21,7 +21,7 @@ type Config struct {
 	MySQL MySQLConfig `mapstructure:"mysql"`
 	Redis RedisConfig `mapstructure:"redis"`
 	Log   LogConfig   `mapstructure:"log"`
-	Jwt JwtConfig `mapstructure:"jwt"`
+	Jwt   JwtConfig   `mapstructure:"jwt"`
 }
 
 // RedisConfig Redis 配置结构体（与 YAML 中 redis 节点字段对应）
