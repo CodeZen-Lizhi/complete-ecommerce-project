@@ -23,5 +23,9 @@ log:
   level: "debug"
   encoding: "console"
 
+jwt:
+  secret: "change_me_to_a_random_secret"
+  expires_hours: 24
+
 
 userid: 111

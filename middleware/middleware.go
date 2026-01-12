@@ -6,29 +6,36 @@ import (
 	"ecommerce/container"
 	"ecommerce/util"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"log/slog"
 	"net/http"
 	"os"
 	"runtime/debug"
 	"strings"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 // CorsMiddleware 处理跨域请求
 func CorsMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// 允许所有来源
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		origin := c.GetHeader("Origin")
+		if origin != "" {
+			c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
+			c.Writer.Header().Set("Vary", "Origin")
+			// 允许携带cookie（仅在明确 Origin 时才允许）
+			c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+		} else {
+			// 非浏览器场景保持兼容
+			c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		}
 		// 允许的请求方法
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		// 允许的请求头
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization, Role")
 		// 允许暴露的响应头
 		c.Writer.Header().Set("Access-Control-Expose-Headers", "Content-Length")
-		// 允许携带cookie
-		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 
 		// 处理OPTIONS请求
 		if c.Request.Method == "OPTIONS" {
@@ -293,6 +300,7 @@ func GinLogger(logger *slog.Logger) gin.HandlerFunc {
 func logPanic(c *gin.Context, logger *slog.Logger, err error) {
 	logger.ErrorContext(
 		context.Background(),
+		"panic recovered",
 		"stack", fmt.Sprintf("错误: %v", err),
 		"request_id", c.GetString("X-Request-ID"),
 		"method", c.Request.Method,

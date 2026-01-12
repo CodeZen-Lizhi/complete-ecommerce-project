@@ -2,8 +2,9 @@ package model
 
 import (
 	"ecommerce/util"
-	"gorm.io/gorm"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 // User 用户模型
@@ -15,7 +16,7 @@ type User struct {
 	Age        int        `gorm:"default:0"`
 	DelFlag    *string    `gorm:"column:del_flag" comment:"删除标志（例如：0-未删除，1-已删除）"`
 	CreateId   *int64     `gorm:"column:create_id" comment:"创建人ID"`
-	CreateTime *time.Time ` gorm:"column:create_time;type:datetime" comment:"创建时间"`
+	CreateTime *time.Time `gorm:"column:create_time;type:datetime" comment:"创建时间"`
 	UpdateId   *int64     `gorm:"column:update_id" comment:"更新人ID"`
 	UpdateTime *time.Time `gorm:"column:update_time;type:datetime" comment:"更新时间"`
 }
@@ -30,7 +31,7 @@ func (u *User) TableName() string {
 // BeforeCreate 创建前钩子：自动填充创建时间和更新时间
 func (u *User) BeforeCreate(tx *gorm.DB) error {
 	now := time.Now() // 获取当前时间（time.Time类型）
-	delFlag := "1"
+	delFlag := "0"
 	u.CreateTime = &now
 	u.UpdateTime = &now
 	u.DelFlag = &delFlag

@@ -7,9 +7,10 @@ import (
 	"ecommerce/repository"
 	"ecommerce/service"
 	"ecommerce/util"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
 )
 
 // UserRegister 用户注册
@@ -27,13 +28,22 @@ func UserRegister(c *gin.Context) {
 		return
 	}
 	log := logger.GetLogger()
-	log.Info("用户注册", "userVo", userVo)
+	log.Info("用户注册", "username", userVo.Username, "email", userVo.Email, "age", userVo.Age)
 	dao := repository.NewUserRepository()
 	service := service.NewUserService(dao)
 	//ctn, err := GetContainer(c)
 
 	//验证登录名是否存在
-	if exists, err := service.IzExist(userVo.Username); exists {
+	if exists, err := service.IzExist(userVo.Username); err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"code": 500,
+			"msg":  "用户查询失败",
+			"data": gin.H{
+				"error": err.Error(),
+			},
+		})
+		return
+	} else if exists {
 		c.JSON(http.StatusOK, gin.H{
 			"code": 400,
 			"msg":  "用户已存在",
@@ -78,7 +88,11 @@ func UserLogin(c *gin.Context) {
 		Fail(c, "用户名或密码错误")
 		return
 	}
-	token, err := util.GenerateToken(strconv.Itoa(int(user.ID)))
+	token, err := util.GenerateToken(strconv.FormatInt(user.ID, 10))
+	if err != nil {
+		Fail(c, "生成token失败")
+		return
+	}
 	Success(c, token)
 }
 
@@ -151,7 +165,7 @@ func ChangePwd(c *gin.Context) {
 // UserOrderList 查看我的订单
 func UserOrderList(c *gin.Context) {
 	// 从上下文获取用户ID
-	userID, _ := c.Get("userID")
+	userID, _ := c.Get(util.CurrentUserId)
 
 	c.JSON(http.StatusOK, gin.H{
 		"code": 200,

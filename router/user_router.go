@@ -2,6 +2,7 @@ package router
 
 import (
 	"ecommerce/handler"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -12,7 +13,6 @@ func registerUserPublicRoutes(public *gin.RouterGroup) {
 		user.POST("/register", handler.UserRegister) // 用户注册
 		user.POST("/login", handler.UserLogin)       // 用户登录
 		user.GET("/captcha", handler.GetCaptcha)     // 获取验证码
-		user.GET("/getInfoById", handler.GetUserInfo)
 	}
 }
 

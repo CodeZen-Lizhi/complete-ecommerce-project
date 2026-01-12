@@ -4,6 +4,8 @@ import (
 	"ecommerce/internal/logger"
 	"ecommerce/internal/mysql"
 	"ecommerce/model"
+	"errors"
+
 	"gorm.io/gorm"
 )
 
@@ -11,10 +13,10 @@ import (
 type UserRepository interface {
 	FindByID(id uint64) (*model.User, error)
 	FindByEmail(email string) (*model.User, error)
+	FindByUsername(username string) (*model.User, error)
 	Create(user *model.User) error
 	Update(user *model.User) error
 	IzExist(username string) (bool, error)
-	Login(username string, password string) (*model.User, error)
 }
 
 // UserRepositoryImpl 实现接口
@@ -33,9 +35,12 @@ func NewUserRepository() UserRepository {
 var _ UserRepository = (*UserRepositoryImpl)(nil)
 
 func (r *UserRepositoryImpl) FindByEmail(email string) (*model.User, error) {
-	//mysql.DB.select("id", "email", "password").Where("email = ?", email).First(&model.User{})
-
-	panic("implement me")
+	var user model.User
+	tx := r.db.Where("email = ? and del_flag = ?", email, "0").First(&user)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	return &user, nil
 }
 
 func (r *UserRepositoryImpl) Create(user *model.User) error {
@@ -63,14 +68,17 @@ func (r *UserRepositoryImpl) IzExist(username string) (bool, error) {
 	var user model.User
 	tx := r.db.Where("username = ? and del_flag = ?", username, "0").First(&user)
 	if tx.Error != nil {
+		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
+			return false, nil
+		}
 		return false, tx.Error
 	}
 	return tx.RowsAffected > 0, tx.Error
 }
 
-func (r *UserRepositoryImpl) Login(username string, password string) (*model.User, error) {
+func (r *UserRepositoryImpl) FindByUsername(username string) (*model.User, error) {
 	var user model.User
-	tx := r.db.Where("username = ? and password = ? and del_flag = ?", username, password, "0").First(&user)
+	tx := r.db.Where("username = ? and del_flag = ?", username, "0").First(&user)
 	if tx.Error != nil {
 		return nil, tx.Error
 	}

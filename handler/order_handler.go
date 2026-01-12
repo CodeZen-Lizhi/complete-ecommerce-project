@@ -1,10 +1,13 @@
 package handler
 
 import (
-	"github.com/gin-gonic/gin"
+	"ecommerce/util"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 // CreateOrder 创建订单
@@ -14,7 +17,7 @@ func CreateOrder(c *gin.Context) {
 	_, _ = strconv.Atoi(c.PostForm("addressId"))
 
 	// 获取当前用户ID
-	userId, _ := c.Get("userID")
+	userId, _ := c.Get(util.CurrentUserId)
 
 	// 实际项目中应该有库存检查、创建订单等业务逻辑
 	orderNo := "ORD" + time.Now().Format("20060102150405") + "12345"
@@ -47,7 +50,7 @@ func ListUserOrders(c *gin.Context) {
 	}
 
 	// 获取当前用户ID
-	userId, _ := c.Get("userID")
+	userId, _ := c.Get(util.CurrentUserId)
 
 	// 实际项目中应该查询数据库获取用户订单列表
 	c.JSON(http.StatusOK, gin.H{
@@ -85,7 +88,7 @@ func ListUserOrders(c *gin.Context) {
 func GetOrderDetail(c *gin.Context) {
 	// 获取订单ID
 	id := c.Param("id")
-	userId, _ := c.Get("userID")
+	userId, _ := c.Get(util.CurrentUserId)
 
 	// 实际项目中应该查询数据库获取订单详情
 	c.JSON(http.StatusOK, gin.H{
@@ -119,12 +122,12 @@ func GetOrderDetail(c *gin.Context) {
 // CancelOrder 取消订单
 func CancelOrder(c *gin.Context) {
 	id := c.Param("id")
-	userId, _ := c.Get("userID")
+	userId, _ := c.Get(util.CurrentUserId)
 
 	// 实际项目中应该有订单状态检查和取消逻辑
 	c.JSON(http.StatusOK, gin.H{
 		"code": 200,
-		"msg":  "用户 " + userId.(string) + " 的订单 " + id + " 已取消",
+		"msg": fmt.Sprintf("用户 %v 的订单 %s 已取消", userId, id),
 	})
 }
 

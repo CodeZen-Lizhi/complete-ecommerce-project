@@ -33,7 +33,8 @@ func main() {
 	fmt.Println(id)
 	// 初始化Redis客户端
 	if err := redis.Init(); err != nil {
-		log.Error("Redis初始化失败", err)
+		log.Error("Redis初始化失败", "error", err)
+		return
 	}
 	defer func() {
 		if err := redis.Close(); err != nil {
@@ -42,7 +43,8 @@ func main() {
 
 	// 2. 初始化 MySQL（GORM）
 	if err := mysql.InitMySQL(); err != nil {
-		log.Error("初始化 MySQL 失败: %v", err)
+		log.Error("初始化 MySQL 失败", "error", err)
+		return
 	}
 	defer func() {
 		if err := mysql.Close(); err != nil {
@@ -53,16 +55,18 @@ func main() {
 	// 初始化路由
 	r := router.InitTotalRouter(log, ctn)
 	// 启动pprof 语言内置的性能分析工具包，用于在运行时收集程序的 CPU、内存、goroutine、阻塞、互斥锁
-	go func() {
-		log.Info("🚀 pprof 启动: http://localhost:6060/debug/pprof/")
-		if err := http.ListenAndServe("localhost:6060", nil); err != nil {
-			log.Error("pprof 服务启动失败: %v", err)
-		}
-	}()
+	if config.Cfg.App.Env != "prod" {
+		go func() {
+			log.Info("🚀 pprof 启动: http://localhost:6060/debug/pprof/")
+			if err := http.ListenAndServe("localhost:6060", nil); err != nil {
+				log.Error("pprof 服务启动失败", "error", err)
+			}
+		}()
+	}
 	// 启动服务器
 	log.Info("服务器启动成功", "APP-NAME", config.Cfg.App.Name, "APP-PORT", config.Cfg.App.Port)
 	// 服务器启动是阻塞操作，只有失败才会返回
-	if err := r.Run(":8080"); err != nil {
+	if err := r.Run(fmt.Sprintf(":%d", config.Cfg.App.Port)); err != nil {
 		log.Error("服务器启动失败", "error", err)
 	}
 
