@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"ecommerce/container"
 	"ecommerce/internal/config"
 	"ecommerce/internal/logger"
@@ -8,10 +9,15 @@ import (
 	"ecommerce/internal/redis"
 	"ecommerce/router"
 	"ecommerce/util"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
 	_ "net/http/pprof"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 )
 
 // main 是应用程序入口。
@@ -64,11 +70,34 @@ func main() {
 			}
 		}()
 	}
-	// 启动服务器
-	log.Info("服务器启动成功", "APP-NAME", config.Cfg.App.Name, "APP-PORT", config.Cfg.App.Port)
-	// 服务器启动是阻塞操作，只有失败才会返回
-	if err := r.Run(fmt.Sprintf(":%d", config.Cfg.App.Port)); err != nil {
-		log.Error("服务器启动失败", "error", err)
+	// 创建支持优雅停机的 HTTP Server
+	addr := fmt.Sprintf(":%d", config.Cfg.App.Port)
+	server := &http.Server{
+		Addr:              addr,
+		Handler:           r,
+		ReadHeaderTimeout: 5 * time.Second,
 	}
+
+	// 监听退出信号（Ctrl+C / SIGTERM）
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	go func() {
+		log.Info("服务器启动成功", "APP-NAME", config.Cfg.App.Name, "APP-PORT", config.Cfg.App.Port)
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Error("服务器启动失败", "error", err)
+		}
+	}()
+
+	<-ctx.Done()
+	log.Info("收到退出信号，开始优雅停机")
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		log.Error("服务器优雅停机失败", "error", err)
+		return
+	}
+	log.Info("服务器已优雅停机")
 
 }

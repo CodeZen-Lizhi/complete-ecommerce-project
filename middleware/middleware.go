@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"context"
 	"ecommerce/container"
-	"ecommerce/handler"
+	"ecommerce/internal/response"
 	"ecommerce/util"
 	"errors"
 	"fmt"
@@ -54,6 +54,7 @@ func CorsMiddleware() gin.HandlerFunc {
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		requestID := c.GetString("X-Request-ID")
+		const authFailedMessage = "未授权访问，请先登录"
 		// 获取Authorization头
 		// 1. 从请求头获取Authorization
 		authHeader := c.GetHeader("Authorization")
@@ -67,7 +68,7 @@ func AuthMiddleware() gin.HandlerFunc {
 				slog.String("method", c.Request.Method),
 				slog.String("error", err.Error()),
 			)
-			handler.AuthError(c, err.Error())
+			response.AuthError(c, authFailedMessage)
 			return
 		}
 		// 2. 调用工具类解析令牌
@@ -81,7 +82,7 @@ func AuthMiddleware() gin.HandlerFunc {
 				slog.String("method", c.Request.Method),
 				slog.String("error", err.Error()),
 			)
-			handler.AuthError(c, "未授权访问，请先登录")
+			response.AuthError(c, authFailedMessage)
 			return
 		}
 		// 可以在这里解析token获取用户信息并设置到上下文
@@ -111,7 +112,7 @@ func AdminAuthMiddleware() gin.HandlerFunc {
 
 		// 验证是否为管理员
 		if role != "admin" {
-			handler.ForbiddenError(c, "没有管理员权限，无法访问")
+			response.ForbiddenError(c, "没有管理员权限，无法访问")
 			return
 		}
 
@@ -466,5 +467,5 @@ func sendErrorResponse(c *gin.Context, requestID string) {
 	if c.Writer.Written() {
 		return
 	}
-	handler.SystemError(c, "服务器内部错误，请联系技术支持", requestID)
+	response.SystemError(c, "服务器内部错误，请联系技术支持", requestID)
 }

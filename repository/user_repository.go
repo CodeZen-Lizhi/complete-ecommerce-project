@@ -14,6 +14,7 @@ import (
 
 // UserRepository 定义接口
 type UserRepository interface {
+	WithDB(db *gorm.DB) UserRepository
 	FindByID(id uint64) (*model.User, error)
 	FindByEmail(email string) (*model.User, error)
 	FindByUsername(username string) (*model.User, error)
@@ -34,8 +35,21 @@ func NewUserRepository() UserRepository {
 	}
 }
 
+// NewUserRepositoryWithDB 使用指定 DB（含事务 tx）构造用户仓储实例。
+func NewUserRepositoryWithDB(db *gorm.DB) UserRepository {
+	return &UserRepositoryImpl{db: db}
+}
+
 // 此段代码可以确保结构体实现了接口的所有方法，否则编译会出错
 var _ UserRepository = (*UserRepositoryImpl)(nil)
+
+// WithDB 返回绑定到指定 DB 的仓储实例。
+func (r *UserRepositoryImpl) WithDB(db *gorm.DB) UserRepository {
+	if db == nil {
+		return r
+	}
+	return &UserRepositoryImpl{db: db}
+}
 
 // FindByEmail 根据邮箱查询用户。
 func (r *UserRepositoryImpl) FindByEmail(email string) (*model.User, error) {

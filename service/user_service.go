@@ -1,6 +1,8 @@
 package service
 
 import (
+	"context"
+	"ecommerce/internal/mysql"
 	"ecommerce/model"
 	"ecommerce/repository"
 	"errors"
@@ -15,6 +17,7 @@ type UserService interface {
 	FindByID(id uint64) (*model.User, error)
 	IzExist(username string) (bool, error)
 	Create(user *model.User) error
+	Register(ctx context.Context, user *model.User) error
 	Login(username string, password string) (*model.User, error)
 }
 
@@ -25,6 +28,9 @@ type UserServiceImpl struct {
 
 // 确保实现类实现了接口
 var _ UserService = (*UserServiceImpl)(nil)
+
+// ErrUserAlreadyExists 表示用户名已存在。
+var ErrUserAlreadyExists = errors.New("user already exists")
 
 // NewUserService 创建用户服务实例。
 func NewUserService(userRepository repository.UserRepository) UserService {
@@ -46,6 +52,9 @@ func (u *UserServiceImpl) IzExist(username string) (bool, error) {
 
 // Create 创建用户并处理密码加密。
 func (u *UserServiceImpl) Create(user *model.User) error {
+	if user == nil {
+		return errors.New("用户不能为空")
+	}
 	if user.Password != "" {
 		hashed, err := hashPassword(user.Password)
 		if err != nil {
@@ -54,6 +63,31 @@ func (u *UserServiceImpl) Create(user *model.User) error {
 		user.Password = hashed
 	}
 	return u.userRepository.Create(user)
+}
+
+// Register 在同一事务内执行用户存在性校验与创建。
+func (u *UserServiceImpl) Register(ctx context.Context, user *model.User) error {
+	if user == nil {
+		return errors.New("用户不能为空")
+	}
+	return mysql.Transaction(ctx, func(tx *gorm.DB) error {
+		repo := u.userRepository.WithDB(tx)
+		exist, err := repo.IzExist(user.Username)
+		if err != nil {
+			return err
+		}
+		if exist {
+			return ErrUserAlreadyExists
+		}
+		if user.Password != "" {
+			hashed, err := hashPassword(user.Password)
+			if err != nil {
+				return err
+			}
+			user.Password = hashed
+		}
+		return repo.Create(user)
+	})
 }
 
 // Login 校验用户名密码并返回用户信息。
