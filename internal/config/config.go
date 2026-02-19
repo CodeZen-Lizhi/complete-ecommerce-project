@@ -51,11 +51,13 @@ type MySQLConfig struct {
 	Debug           bool   `mapstructure:"debug"`
 }
 
+// LogConfig 日志配置。
 type LogConfig struct {
 	Level    string `mapstructure:"level"`
 	Encoding string `mapstructure:"encoding"`
 }
 
+// JwtConfig JWT配置。
 type JwtConfig struct {
 	Secret       string `mapstructure:"secret"`
 	ExpiresHours int    `mapstructure:"expires_hours"`

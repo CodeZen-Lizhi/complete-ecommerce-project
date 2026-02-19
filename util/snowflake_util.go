@@ -2,12 +2,14 @@ package util
 
 import (
 	"ecommerce/internal/logger"
-	"github.com/bwmarrin/snowflake"
 	"time"
+
+	"github.com/bwmarrin/snowflake"
 )
 
 var node *snowflake.Node
 
+// Init 初始化雪花ID节点。
 func Init(nodeId int64) {
 	//设置自定义起始时间
 	customEpoch := time.Date(2023, time.January, 1, 0, 0, 0, 0, time.UTC).UnixMilli()
@@ -22,6 +24,7 @@ func Init(nodeId int64) {
 	}
 }
 
+// GenID 生成全局唯一ID。
 func GenID() int64 {
 	if node == nil {
 		return 0

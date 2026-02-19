@@ -37,6 +37,7 @@ func NewUserRepository() UserRepository {
 // 此段代码可以确保结构体实现了接口的所有方法，否则编译会出错
 var _ UserRepository = (*UserRepositoryImpl)(nil)
 
+// FindByEmail 根据邮箱查询用户。
 func (r *UserRepositoryImpl) FindByEmail(email string) (*model.User, error) {
 	var user model.User
 	tx := r.db.Where("email = ? and del_flag = ?", email, "0").First(&user)
@@ -46,16 +47,19 @@ func (r *UserRepositoryImpl) FindByEmail(email string) (*model.User, error) {
 	return &user, nil
 }
 
+// Create 创建用户记录。
 func (r *UserRepositoryImpl) Create(user *model.User) error {
 	tx := r.db.Create(user)
 	return wrapRepoError("UserRepositoryImpl.Create", tx.Error)
 }
 
+// Update 更新用户记录。
 func (r *UserRepositoryImpl) Update(user *model.User) error {
 	tx := r.db.Updates(user)
 	return wrapRepoError("UserRepositoryImpl.Update", tx.Error)
 }
 
+// FindByID 根据ID查询用户。
 func (r *UserRepositoryImpl) FindByID(id uint64) (*model.User, error) {
 	var user model.User
 	tx := r.db.First(&user, id)
@@ -67,6 +71,7 @@ func (r *UserRepositoryImpl) FindByID(id uint64) (*model.User, error) {
 	return &user, nil
 }
 
+// IzExist 判断用户名是否已存在。
 func (r *UserRepositoryImpl) IzExist(username string) (bool, error) {
 	var user model.User
 	tx := r.db.Where("username = ? and del_flag = ?", username, "0").First(&user)
@@ -79,6 +84,7 @@ func (r *UserRepositoryImpl) IzExist(username string) (bool, error) {
 	return tx.RowsAffected > 0, nil
 }
 
+// FindByUsername 根据用户名查询用户。
 func (r *UserRepositoryImpl) FindByUsername(username string) (*model.User, error) {
 	var user model.User
 	tx := r.db.Where("username = ? and del_flag = ?", username, "0").First(&user)
@@ -88,6 +94,7 @@ func (r *UserRepositoryImpl) FindByUsername(username string) (*model.User, error
 	return &user, nil
 }
 
+// wrapRepoError 包装仓储层错误并附带代码行信息。
 func wrapRepoError(operation string, err error) error {
 	if err == nil {
 		return nil

@@ -26,21 +26,25 @@ type UserServiceImpl struct {
 // 确保实现类实现了接口
 var _ UserService = (*UserServiceImpl)(nil)
 
+// NewUserService 创建用户服务实例。
 func NewUserService(userRepository repository.UserRepository) UserService {
 	return &UserServiceImpl{
 		userRepository: userRepository,
 	}
 }
 
+// FindByID 根据ID查询用户。
 func (u *UserServiceImpl) FindByID(id uint64) (*model.User, error) {
 	return u.userRepository.FindByID(id)
 }
 
+// IzExist 判断用户名是否存在。
 func (u *UserServiceImpl) IzExist(username string) (bool, error) {
 	exist, err := u.userRepository.IzExist(username)
 	return exist, err
 }
 
+// Create 创建用户并处理密码加密。
 func (u *UserServiceImpl) Create(user *model.User) error {
 	if user.Password != "" {
 		hashed, err := hashPassword(user.Password)
@@ -52,6 +56,7 @@ func (u *UserServiceImpl) Create(user *model.User) error {
 	return u.userRepository.Create(user)
 }
 
+// Login 校验用户名密码并返回用户信息。
 func (u *UserServiceImpl) Login(username string, password string) (*model.User, error) {
 	user, err := u.userRepository.FindByUsername(username)
 	if err != nil {
@@ -77,6 +82,7 @@ func (u *UserServiceImpl) Login(username string, password string) (*model.User, 
 	return user, nil
 }
 
+// hashPassword 使用 bcrypt 对明文密码进行哈希。
 func hashPassword(raw string) (string, error) {
 	hashed, err := bcrypt.GenerateFromPassword([]byte(raw), bcrypt.DefaultCost)
 	if err != nil {
@@ -85,10 +91,12 @@ func hashPassword(raw string) (string, error) {
 	return string(hashed), nil
 }
 
+// comparePassword 比较哈希密码和明文密码是否匹配。
 func comparePassword(hashed, raw string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hashed), []byte(raw))
 }
 
+// isBcryptHash 判断密码字段是否为 bcrypt 格式。
 func isBcryptHash(password string) bool {
 	return strings.HasPrefix(password, "$2a$") || strings.HasPrefix(password, "$2b$") || strings.HasPrefix(password, "$2y$")
 }

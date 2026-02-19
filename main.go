@@ -14,6 +14,7 @@ import (
 	_ "net/http/pprof"
 )
 
+// main 是应用程序入口。
 func main() {
 	//初始化配置文件
 	configErr := config.Init()

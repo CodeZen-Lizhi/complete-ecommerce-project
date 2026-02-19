@@ -46,6 +46,7 @@ func (u *User) BeforeUpdate(tx *gorm.DB) error {
 	return nil
 }
 
+// UserVo 定义用户请求/响应传输对象。
 type UserVo struct {
 	//`,string` 表示在 JSON 序列化和反序列化过程中，该 `int64` 类型的字段将被当作字符串处理。
 	//这通常用于防止 JavaScript 等语言在处理大整数时出现精度丢失的问题

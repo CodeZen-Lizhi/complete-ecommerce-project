@@ -53,23 +53,34 @@ func CorsMiddleware() gin.HandlerFunc {
 // AuthMiddleware 验证用户是否登录
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		requestID := c.GetString("X-Request-ID")
 		// 获取Authorization头
 		// 1. 从请求头获取Authorization
-		token := c.GetHeader("Authorization")
-		if token == "" {
-			handler.AuthError(c, "缺少Authorization头")
+		authHeader := c.GetHeader("Authorization")
+		tokenString, err := parseBearerToken(authHeader)
+		if err != nil {
+			slog.WarnContext(
+				c.Request.Context(),
+				"鉴权头解析失败",
+				slog.String("request_id", requestID),
+				slog.String("path", c.Request.URL.Path),
+				slog.String("method", c.Request.Method),
+				slog.String("error", err.Error()),
+			)
+			handler.AuthError(c, err.Error())
 			return
 		}
-		// 2. 剥离Bearer前缀（格式：Bearer <token>）
-		var tokenString string
-		_, err := fmt.Sscanf(token, "Bearer %s", &tokenString)
-		if err != nil || tokenString == "" {
-			handler.AuthError(c, "Authorization格式错误（应为Bearer <token>）")
-			return
-		}
-		// 3. 调用工具类解析令牌
+		// 2. 调用工具类解析令牌
 		userID, err := util.ParseToken(tokenString)
 		if err != nil {
+			slog.WarnContext(
+				c.Request.Context(),
+				"Token校验失败",
+				slog.String("request_id", requestID),
+				slog.String("path", c.Request.URL.Path),
+				slog.String("method", c.Request.Method),
+				slog.String("error", err.Error()),
+			)
 			handler.AuthError(c, "未授权访问，请先登录")
 			return
 		}
@@ -77,6 +88,19 @@ func AuthMiddleware() gin.HandlerFunc {
 		c.Set(util.CurrentUserId, userID)
 		c.Next()
 	}
+}
+
+// parseBearerToken 解析 Authorization 头中的 Bearer Token。
+func parseBearerToken(authHeader string) (string, error) {
+	authHeader = strings.TrimSpace(authHeader)
+	if authHeader == "" {
+		return "", errors.New("缺少Authorization头")
+	}
+	parts := strings.Fields(authHeader)
+	if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") || parts[1] == "" {
+		return "", errors.New("Authorization格式错误（应为Bearer <token>）")
+	}
+	return parts[1], nil
 }
 
 // AdminAuthMiddleware 验证是否为管理员
@@ -93,7 +117,6 @@ func AdminAuthMiddleware() gin.HandlerFunc {
 
 		c.Next()
 	}
-	//todo 写一个统计方法用时的中间件
 }
 
 // RequestIdMiddleware 在 Gin 中间件中生成 request_id 链路追踪
@@ -126,12 +149,14 @@ type responseWriter struct {
 	size int
 }
 
+// Write 重写字节写入并累计响应字节数。
 func (w *responseWriter) Write(b []byte) (int, error) {
 	n, err := w.ResponseWriter.Write(b)
 	w.size += n
 	return n, err
 }
 
+// WriteString 重写字符串写入并累计响应字节数。
 func (w *responseWriter) WriteString(s string) (int, error) {
 	n, err := w.ResponseWriter.WriteString(s)
 	w.size += n
@@ -241,6 +266,7 @@ func findModulePath() string {
 	return ""
 }
 
+// findProjectRoot 获取当前进程工作目录并转为统一路径格式。
 func findProjectRoot() string {
 	wd, err := os.Getwd()
 	if err != nil {
@@ -249,6 +275,7 @@ func findProjectRoot() string {
 	return filepath.ToSlash(wd)
 }
 
+// runtimeCallStackFrames 读取当前调用栈帧信息。
 func runtimeCallStackFrames(skip int) []runtime.Frame {
 	pcs := make([]uintptr, 64)
 	n := runtime.Callers(skip, pcs)
@@ -267,6 +294,7 @@ func runtimeCallStackFrames(skip int) []runtime.Frame {
 	return result
 }
 
+// isProjectFrame 判断栈帧是否属于当前项目代码。
 func isProjectFrame(frame runtime.Frame, modulePath, projectRoot string) bool {
 	if modulePath != "" && strings.HasPrefix(frame.Function, modulePath+"/") {
 		return true
@@ -278,6 +306,7 @@ func isProjectFrame(frame runtime.Frame, modulePath, projectRoot string) bool {
 	return strings.HasPrefix(file, projectRoot+"/")
 }
 
+// toPanicError 将 recover 的任意值转换为 error。
 func toPanicError(r any) error {
 	if err, ok := r.(error); ok {
 		return err
@@ -285,6 +314,7 @@ func toPanicError(r any) error {
 	return fmt.Errorf("%v", r)
 }
 
+// buildErrorChain 构建错误包装链文本。
 func buildErrorChain(err error) string {
 	if err == nil {
 		return ""
@@ -298,6 +328,7 @@ func buildErrorChain(err error) string {
 	return strings.Join(lines, " <- ")
 }
 
+// toRelativeProjectPath 将绝对路径转换为相对项目路径。
 func toRelativeProjectPath(path string) string {
 	path = filepath.ToSlash(path)
 	projectRoot := findProjectRoot()
@@ -311,6 +342,7 @@ func toRelativeProjectPath(path string) string {
 	return filepath.ToSlash(rel)
 }
 
+// shortFunctionName 提取函数名的短显示形式。
 func shortFunctionName(function string) string {
 	function = strings.TrimSpace(function)
 	if function == "" {
@@ -322,6 +354,7 @@ func shortFunctionName(function string) string {
 	return function
 }
 
+// formatLocation 组合文件与行号为可读字符串。
 func formatLocation(file string, line int) string {
 	return fmt.Sprintf("%s:%d", filepath.ToSlash(file), line)
 }
