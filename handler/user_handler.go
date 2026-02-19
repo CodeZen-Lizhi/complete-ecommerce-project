@@ -7,6 +7,7 @@ import (
 	"ecommerce/repository"
 	"ecommerce/service"
 	"ecommerce/util"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -18,13 +19,7 @@ func UserRegister(c *gin.Context) {
 	var userVo model.UserVo
 	//接收参数
 	if err := c.ShouldBindJSON(&userVo); err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"code": 400,
-			"msg":  "参数错误",
-			"data": gin.H{
-				"error": err.Error(),
-			},
-		})
+		ParamError(c, "参数错误")
 		return
 	}
 	log := logger.GetLogger()
@@ -35,22 +30,10 @@ func UserRegister(c *gin.Context) {
 
 	//验证登录名是否存在
 	if exists, err := service.IzExist(userVo.Username); err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"code": 500,
-			"msg":  "用户查询失败",
-			"data": gin.H{
-				"error": err.Error(),
-			},
-		})
+		Error(c, "用户查询失败")
 		return
 	} else if exists {
-		c.JSON(http.StatusOK, gin.H{
-			"code": 400,
-			"msg":  "用户已存在",
-			"data": gin.H{
-				"error": err.Error(),
-			},
-		})
+		Fail(c, "用户已存在")
 		return
 	}
 	//新增 用户
@@ -61,13 +44,7 @@ func UserRegister(c *gin.Context) {
 		Age:      userVo.Age,
 	}
 	if err := service.Create(&user); err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"code": 400,
-			"msg":  "用户创建失败",
-			"data": gin.H{
-				"error": err.Error(),
-			},
-		})
+		Fail(c, "用户创建失败")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -118,6 +95,9 @@ func GetUserInfo(c *gin.Context) {
 		Fail(c, "未获取到用户id")
 		return
 	}
+	i := 0
+	i2 := 5 / i
+	fmt.Println(i2)
 	con, err2 := container.GetContainer(c)
 	if err2 != nil {
 		log.Error("容器未注入")

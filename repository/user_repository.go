@@ -5,6 +5,9 @@ import (
 	"ecommerce/internal/mysql"
 	"ecommerce/model"
 	"errors"
+	"fmt"
+	"path/filepath"
+	"runtime"
 
 	"gorm.io/gorm"
 )
@@ -38,30 +41,30 @@ func (r *UserRepositoryImpl) FindByEmail(email string) (*model.User, error) {
 	var user model.User
 	tx := r.db.Where("email = ? and del_flag = ?", email, "0").First(&user)
 	if tx.Error != nil {
-		return nil, tx.Error
+		return nil, wrapRepoError("UserRepositoryImpl.FindByEmail", tx.Error)
 	}
 	return &user, nil
 }
 
 func (r *UserRepositoryImpl) Create(user *model.User) error {
 	tx := r.db.Create(user)
-	return tx.Error
+	return wrapRepoError("UserRepositoryImpl.Create", tx.Error)
 }
 
 func (r *UserRepositoryImpl) Update(user *model.User) error {
 	tx := r.db.Updates(user)
-	return tx.Error
+	return wrapRepoError("UserRepositoryImpl.Update", tx.Error)
 }
 
 func (r *UserRepositoryImpl) FindByID(id uint64) (*model.User, error) {
 	var user model.User
 	tx := r.db.First(&user, id)
 	if tx.Error != nil {
-		return nil, tx.Error
+		return nil, wrapRepoError("UserRepositoryImpl.FindByID", tx.Error)
 	}
 	log := logger.GetLogger()
 	log.Debug("查询到用户", "user", user)
-	return &user, tx.Error
+	return &user, nil
 }
 
 func (r *UserRepositoryImpl) IzExist(username string) (bool, error) {
@@ -71,16 +74,27 @@ func (r *UserRepositoryImpl) IzExist(username string) (bool, error) {
 		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
 			return false, nil
 		}
-		return false, tx.Error
+		return false, wrapRepoError("UserRepositoryImpl.IzExist", tx.Error)
 	}
-	return tx.RowsAffected > 0, tx.Error
+	return tx.RowsAffected > 0, nil
 }
 
 func (r *UserRepositoryImpl) FindByUsername(username string) (*model.User, error) {
 	var user model.User
 	tx := r.db.Where("username = ? and del_flag = ?", username, "0").First(&user)
 	if tx.Error != nil {
-		return nil, tx.Error
+		return nil, wrapRepoError("UserRepositoryImpl.FindByUsername", tx.Error)
 	}
-	return &user, tx.Error
+	return &user, nil
+}
+
+func wrapRepoError(operation string, err error) error {
+	if err == nil {
+		return nil
+	}
+	_, file, line, ok := runtime.Caller(1)
+	if !ok {
+		return fmt.Errorf("%s failed: %w", operation, err)
+	}
+	return fmt.Errorf("%s failed (%s:%d): %w", operation, filepath.Base(file), line, err)
 }

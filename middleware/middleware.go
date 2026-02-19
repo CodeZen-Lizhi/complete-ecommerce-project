@@ -4,11 +4,15 @@ import (
 	"bufio"
 	"context"
 	"ecommerce/container"
+	"ecommerce/handler"
 	"ecommerce/util"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
+	"path/filepath"
+	"runtime"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -53,25 +57,20 @@ func AuthMiddleware() gin.HandlerFunc {
 		// 1. 从请求头获取Authorization
 		token := c.GetHeader("Authorization")
 		if token == "" {
-			c.JSON(401, gin.H{"msg": "缺少Authorization头"})
-			c.Abort()
+			handler.AuthError(c, "缺少Authorization头")
 			return
 		}
 		// 2. 剥离Bearer前缀（格式：Bearer <token>）
 		var tokenString string
 		_, err := fmt.Sscanf(token, "Bearer %s", &tokenString)
 		if err != nil || tokenString == "" {
-			c.JSON(401, gin.H{"msg": "Authorization格式错误（应为Bearer <token>）"})
-			c.Abort()
+			handler.AuthError(c, "Authorization格式错误（应为Bearer <token>）")
 			return
 		}
 		// 3. 调用工具类解析令牌
 		userID, err := util.ParseToken(tokenString)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"code": 401,
-				"msg":  "未授权访问，请先登录",
-			})
+			handler.AuthError(c, "未授权访问，请先登录")
 			return
 		}
 		// 可以在这里解析token获取用户信息并设置到上下文
@@ -88,11 +87,7 @@ func AdminAuthMiddleware() gin.HandlerFunc {
 
 		// 验证是否为管理员
 		if role != "admin" {
-			c.JSON(http.StatusForbidden, gin.H{
-				"code": 403,
-				"msg":  "没有管理员权限，无法访问",
-			})
-			c.Abort()
+			handler.ForbiddenError(c, "没有管理员权限，无法访问")
 			return
 		}
 
@@ -148,32 +143,41 @@ func GinRecovery(logger *slog.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		defer func() {
 			if r := recover(); r != nil {
-				// 1. 将 panic 转换为 error
-				var err error
-				switch v := r.(type) {
-				case error:
-					err = v
-				default:
-					err = fmt.Errorf("%v", v)
-				}
-
-				// 2. 捕获并过滤堆栈信息
-				stack := debug.Stack()
-				filteredStack := filterStack(string(stack))
-
-				// 3. 记录包含精简堆栈的结构化日志
+				panicErr := toPanicError(r)
+				rootFrame, stackLines, stackLocations, rawStack := filterStack(string(debug.Stack()))
 				requestID := c.GetString("X-Request-ID")
-				logger.ErrorContext(
-					c.Request.Context(),
-					"Panic Recovered",
-					slog.Any("error", err),
+				logAttrs := []any{
+					slog.String("panic_type", fmt.Sprintf("%T", r)),
+					slog.String("error", panicErr.Error()),
+					slog.String("error_chain", buildErrorChain(panicErr)),
 					slog.String("request_id", requestID),
 					slog.String("method", c.Request.Method),
 					slog.String("path", c.Request.URL.Path),
-					slog.String("stacktrace", filteredStack), // 关键：记录过滤后的堆栈
+				}
+				if len(stackLines) > 0 {
+					logAttrs = append(logAttrs, slog.Any("stacktrace", stackLines))
+				}
+				if rootFrame != nil {
+					logAttrs = append(
+						logAttrs,
+						slog.String("root_function", shortFunctionName(rootFrame.Function)),
+						slog.String("root_file", toRelativeProjectPath(rootFrame.File)),
+						slog.Int("root_line", rootFrame.Line),
+						slog.String("root_location", formatLocation(rootFrame.File, rootFrame.Line)),
+					)
+				}
+				if len(stackLocations) > 0 {
+					logAttrs = append(logAttrs, slog.Any("stacktrace_locations", stackLocations))
+				}
+				if len(stackLines) == 0 {
+					logAttrs = append(logAttrs, slog.String("stacktrace_raw", rawStack))
+				}
+				logger.ErrorContext(
+					c.Request.Context(),
+					"Panic Recovered",
+					logAttrs...,
 				)
-
-				// 4. 返回标准化的 500 错误响应
+				emitClickableLocations(rootFrame, stackLocations)
 				sendErrorResponse(c, requestID)
 			}
 		}()
@@ -181,52 +185,42 @@ func GinRecovery(logger *slog.Logger) gin.HandlerFunc {
 	}
 }
 
-// filterStack 通过分析堆栈，精准定位到触发 panic 的业务代码行
-func filterStack(stack string) string {
+// filterStack 返回业务根因帧 + 可读调用栈 + 可点击定位 + 原始调用栈
+func filterStack(stack string) (*runtime.Frame, []string, []string, string) {
+	frames := runtimeCallStackFrames(4)
 	projectModulePath := findModulePath()
-	if projectModulePath == "" {
-		return stack // 如果找不到模块路径，返回原始堆栈
-	}
+	projectRoot := findProjectRoot()
 
-	var relevantStack []string
-	lines := strings.Split(stack, "\n")
-
-	// 保留 goroutine 状态行
-	if len(lines) > 0 {
-		relevantStack = append(relevantStack, lines[0])
-	}
-
-	// 从堆栈中找到 panic 的直接原因
-	// 策略：在原始堆栈中，panic 的源头通常紧跟在 go runtime 的 panic() 函数帧之后
-	var panicFrameFound bool
-	for i := 1; i < len(lines)-1; i += 2 {
-		functionLine := lines[i]
-		fileLine := lines[i+1]
-
-		// 标记 panic() 函数帧的位置
-		if strings.Contains(functionLine, "panic(") && strings.Contains(fileLine, "runtime/panic.go") {
-			panicFrameFound = true
+	businessFrames := make([]runtime.Frame, 0, len(frames))
+	for _, frame := range frames {
+		if !isProjectFrame(frame, projectModulePath, projectRoot) {
 			continue
 		}
-
-		// 在找到 panic 帧后，第一个不属于中间件目录且属于我们自己项目的帧就是源头
-		isMiddleware := strings.Contains(fileLine, "/middleware/") // 关键：过滤掉所有中间件目录下的文件
-		isProjectCode := strings.Contains(fileLine, projectModulePath)
-
-		if panicFrameFound && isProjectCode && !isMiddleware {
-			relevantStack = append(relevantStack, functionLine)
-			relevantStack = append(relevantStack, fileLine)
-			// 成功找到，跳出循环
-			break
+		if strings.Contains(filepath.ToSlash(frame.File), "/middleware/") {
+			continue
 		}
+		businessFrames = append(businessFrames, frame)
 	}
-
-	// 如果新策略未找到（例如 panic 直接发生在中间件中），则返回原始堆栈以防信息丢失
-	if len(relevantStack) <= 1 {
-		return stack
+	// 如果过滤后没有业务帧，降级使用原始堆栈，避免丢失信息
+	if len(businessFrames) == 0 {
+		return nil, nil, nil, stack
 	}
-
-	return strings.Join(relevantStack, "\n")
+	root := businessFrames[0]
+	limit := 20
+	if len(businessFrames) < limit {
+		limit = len(businessFrames)
+	}
+	stackLines := make([]string, 0, limit)
+	stackLocations := make([]string, 0, limit)
+	for i := 0; i < limit; i++ {
+		frame := businessFrames[i]
+		stackLines = append(
+			stackLines,
+			fmt.Sprintf("at %s (%s:%d)", shortFunctionName(frame.Function), toRelativeProjectPath(frame.File), frame.Line),
+		)
+		stackLocations = append(stackLocations, formatLocation(frame.File, frame.Line))
+	}
+	return &root, stackLines, stackLocations, stack
 }
 
 // findModulePath 从 go.mod 文件中读取模块路径
@@ -247,6 +241,121 @@ func findModulePath() string {
 	return ""
 }
 
+func findProjectRoot() string {
+	wd, err := os.Getwd()
+	if err != nil {
+		return ""
+	}
+	return filepath.ToSlash(wd)
+}
+
+func runtimeCallStackFrames(skip int) []runtime.Frame {
+	pcs := make([]uintptr, 64)
+	n := runtime.Callers(skip, pcs)
+	if n == 0 {
+		return nil
+	}
+	frames := runtime.CallersFrames(pcs[:n])
+	result := make([]runtime.Frame, 0, n)
+	for {
+		frame, more := frames.Next()
+		result = append(result, frame)
+		if !more {
+			break
+		}
+	}
+	return result
+}
+
+func isProjectFrame(frame runtime.Frame, modulePath, projectRoot string) bool {
+	if modulePath != "" && strings.HasPrefix(frame.Function, modulePath+"/") {
+		return true
+	}
+	if projectRoot == "" {
+		return false
+	}
+	file := filepath.ToSlash(frame.File)
+	return strings.HasPrefix(file, projectRoot+"/")
+}
+
+func toPanicError(r any) error {
+	if err, ok := r.(error); ok {
+		return err
+	}
+	return fmt.Errorf("%v", r)
+}
+
+func buildErrorChain(err error) string {
+	if err == nil {
+		return ""
+	}
+	var lines []string
+	current := err
+	for depth := 0; current != nil && depth < 10; depth++ {
+		lines = append(lines, current.Error())
+		current = errors.Unwrap(current)
+	}
+	return strings.Join(lines, " <- ")
+}
+
+func toRelativeProjectPath(path string) string {
+	path = filepath.ToSlash(path)
+	projectRoot := findProjectRoot()
+	if projectRoot == "" {
+		return path
+	}
+	rel, err := filepath.Rel(projectRoot, path)
+	if err != nil {
+		return path
+	}
+	return filepath.ToSlash(rel)
+}
+
+func shortFunctionName(function string) string {
+	function = strings.TrimSpace(function)
+	if function == "" {
+		return function
+	}
+	if idx := strings.LastIndex(function, "/"); idx >= 0 && idx+1 < len(function) {
+		return function[idx+1:]
+	}
+	return function
+}
+
+func formatLocation(file string, line int) string {
+	return fmt.Sprintf("%s:%d", filepath.ToSlash(file), line)
+}
+
+// emitClickableLocations 输出纯文本 file:line，提升 IDE 控制台超链接识别率
+func emitClickableLocations(rootFrame *runtime.Frame, stackLocations []string) {
+	const maxClickableStackFrames = 5
+
+	rootLocation := ""
+	if rootFrame != nil {
+		rootLocation = formatLocation(rootFrame.File, rootFrame.Line)
+		fmt.Fprintf(os.Stderr, "PANIC_ROOT %s\n", rootLocation)
+	}
+	if len(stackLocations) == 0 {
+		return
+	}
+	seen := make(map[string]struct{}, len(stackLocations))
+	count := 0
+	for _, location := range stackLocations {
+		if location == rootLocation {
+			continue
+		}
+		if _, ok := seen[location]; ok {
+			continue
+		}
+		seen[location] = struct{}{}
+		fmt.Fprintf(os.Stderr, "PANIC_STACK %s\n", location)
+		count++
+		if count >= maxClickableStackFrames {
+			break
+		}
+	}
+}
+
 // GinLogger 是一个高度优化的结构化日志中间件
 func GinLogger(logger *slog.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -261,20 +370,42 @@ func GinLogger(logger *slog.Logger) gin.HandlerFunc {
 		c.Next()
 
 		latency := time.Since(startTime)
+		latencyMs := latency.Milliseconds()
 		statusCode := c.Writer.Status()
+		route := c.FullPath()
+		if route == "" {
+			route = req.URL.Path
+		}
 
 		// 使用 slog.Attr 组织日志字段，更具可读性
 		attrs := []slog.Attr{
 			slog.String("request_id", requestID),
 			slog.String("method", req.Method),
 			slog.String("path", req.URL.Path),
+			slog.String("route", route),
 			slog.Int("status_code", statusCode),
 			slog.Duration("latency", latency),
+			slog.Int64("latency_ms", latencyMs),
 			slog.Int("response_size", w.size),
+			slog.String("client_ip", c.ClientIP()),
+			slog.String("user_agent", req.UserAgent()),
+			slog.String("referer", req.Referer()),
+		}
+		if req.ContentLength >= 0 {
+			attrs = append(attrs, slog.Int64("content_length", req.ContentLength))
+		}
+		if businessCode, ok := c.Get(util.ResponseCodeKey); ok {
+			attrs = append(attrs, slog.Any("business_code", businessCode))
+		}
+		if userID, ok := c.Get(util.CurrentUserId); ok {
+			attrs = append(attrs, slog.Any("user_id", userID))
 		}
 
 		if len(c.Errors) > 0 {
-			attrs = append(attrs, slog.String("error", c.Errors.ByType(gin.ErrorTypePrivate).String()))
+			attrs = append(attrs,
+				slog.String("error", c.Errors.String()),
+				slog.Int("error_count", len(c.Errors)),
+			)
 		}
 
 		// 根据状态码和延迟选择日志级别
@@ -296,31 +427,11 @@ func GinLogger(logger *slog.Logger) gin.HandlerFunc {
 	}
 }
 
-// logPanic 输出Panic日志
-func logPanic(c *gin.Context, logger *slog.Logger, err error) {
-	logger.ErrorContext(
-		context.Background(),
-		"panic recovered",
-		"stack", fmt.Sprintf("错误: %v", err),
-		"request_id", c.GetString("X-Request-ID"),
-		"method", c.Request.Method,
-		"path", c.Request.URL.Path,
-	)
-}
-
 // sendErrorResponse 返回标准化JSON响应（前后端统一格式）
 func sendErrorResponse(c *gin.Context, requestID string) {
 	// 避免重复响应（若业务Handler已写响应，跳过）
 	if c.Writer.Written() {
 		return
 	}
-
-	c.AbortWithStatusJSON(
-		http.StatusInternalServerError,
-		gin.H{
-			"code":       http.StatusInternalServerError,
-			"msg":        "服务器内部错误，请联系技术支持",
-			"request_id": requestID,
-		},
-	)
+	handler.SystemError(c, "服务器内部错误，请联系技术支持", requestID)
 }
