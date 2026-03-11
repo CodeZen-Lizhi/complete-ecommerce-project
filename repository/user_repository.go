@@ -14,7 +14,7 @@ import (
 // UserRepository 用户仓储接口
 type UserRepository interface {
 	WithDB(db *gorm.DB) UserRepository
-	FindByID(id uint64) (*model.User, error)
+	FindByID(id int64) (*model.User, error)
 	FindByEmail(email string) (*model.User, error)
 	FindByUsername(username string) (*model.User, error)
 	Create(user *model.User) error
@@ -66,7 +66,7 @@ func (r *UserRepositoryImpl) Update(user *model.User) error {
 }
 
 // FindByID 根据 ID 查询用户
-func (r *UserRepositoryImpl) FindByID(id uint64) (*model.User, error) {
+func (r *UserRepositoryImpl) FindByID(id int64) (*model.User, error) {
 	var user model.User
 	tx := r.db.First(&user, id)
 	if tx.Error != nil {

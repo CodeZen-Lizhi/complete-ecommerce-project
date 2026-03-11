@@ -48,7 +48,7 @@ func jwtConfig() (string, time.Duration, error) {
 }
 
 // GenerateToken 生成包含用户ID的Token
-func GenerateToken(userID string) (string, error) {
+func GenerateToken(userID int64) (string, error) {
 	secret, expires, err := jwtConfig()
 	if err != nil {
 		return "", err
@@ -59,7 +59,7 @@ func GenerateToken(userID string) (string, error) {
 
 	// 构建声明
 	claims := UserClaims{
-		UserID: userID,
+		UserID: strconv.FormatInt(userID, 10),
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    jwtIssuer,
 			Subject:   jwtSubject,
@@ -76,7 +76,7 @@ func GenerateToken(userID string) (string, error) {
 }
 
 // ParseToken 从Token中获取用户ID
-func ParseToken(tokenString string) (uint64, error) {
+func ParseToken(tokenString string) (int64, error) {
 	secret, _, err := jwtConfig()
 	if err != nil {
 		return 0, err
@@ -125,8 +125,8 @@ func ParseToken(tokenString string) (uint64, error) {
 				return 0, errors.New("token受众无效")
 			}
 		}
-		// 将 string 类型的 UserID 转换为 uint64
-		userID, err := strconv.ParseUint(claims.UserID, 10, 64)
+		// 将 string 类型的 UserID 转换为 int64
+		userID, err := strconv.ParseInt(claims.UserID, 10, 64)
 		if err != nil {
 			return 0, errors.New("用户ID格式错误")
 		}

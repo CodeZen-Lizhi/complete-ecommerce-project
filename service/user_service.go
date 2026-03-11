@@ -14,7 +14,7 @@ import (
 
 // UserService 用户服务接口
 type UserService interface {
-	FindByID(id uint64) (*model.User, error)
+	FindByID(id int64) (*model.User, error)
 	IsExist(username string) (bool, error)
 	Create(user *model.User) error
 	Register(ctx context.Context, user *model.User) error
@@ -40,7 +40,7 @@ func NewUserService(userRepository repository.UserRepository) UserService {
 }
 
 // FindByID 根据 ID 查询用户
-func (u *UserServiceImpl) FindByID(id uint64) (*model.User, error) {
+func (u *UserServiceImpl) FindByID(id int64) (*model.User, error) {
 	return u.userRepository.FindByID(id)
 }
 

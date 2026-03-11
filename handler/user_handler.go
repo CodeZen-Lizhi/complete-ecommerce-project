@@ -7,7 +7,6 @@ import (
 	"ecommerce/service"
 	"ecommerce/util"
 	"errors"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -59,7 +58,7 @@ func UserLogin(c *gin.Context) {
 		Fail(c, "用户名或密码错误")
 		return
 	}
-	token, err := util.GenerateToken(strconv.FormatInt(user.ID, 10))
+	token, err := util.GenerateToken(user.ID)
 	if err != nil {
 		Fail(c, "生成token失败")
 		return
@@ -91,7 +90,7 @@ func GetUserInfo(c *gin.Context) {
 	}
 	// 获取用户服务
 	userService := con.UserService
-	user, err := userService.FindByID(userID.(uint64))
+	user, err := userService.FindByID(userID.(int64))
 	if err != nil {
 		log.Error("用户不存在")
 		Fail(c, "用户不存在")
