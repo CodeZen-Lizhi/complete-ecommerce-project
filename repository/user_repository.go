@@ -73,7 +73,7 @@ func (r *UserRepositoryImpl) FindByID(id int64) (*model.User, error) {
 		return nil, wrapRepoError("UserRepositoryImpl.FindByID", tx.Error)
 	}
 	log := logger.GetLogger()
-	log.Debug("查询到用户", "user", user)
+	log.Debug("查询到用户", "user_id", user.ID, "username", user.Username)
 	return &user, nil
 }
 

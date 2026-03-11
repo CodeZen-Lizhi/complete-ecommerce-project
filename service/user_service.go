@@ -14,11 +14,11 @@ import (
 
 // UserService 用户服务接口
 type UserService interface {
-	FindByID(id int64) (*model.User, error)
-	IsExist(username string) (bool, error)
-	Create(user *model.User) error
+	FindByID(ctx context.Context, id int64) (*model.User, error)
+	IsExist(ctx context.Context, username string) (bool, error)
+	Create(ctx context.Context, user *model.User) error
 	Register(ctx context.Context, user *model.User) error
-	Login(username string, password string) (*model.User, error)
+	Login(ctx context.Context, username string, password string) (*model.User, error)
 }
 
 // UserServiceImpl 用户服务实现
@@ -40,18 +40,18 @@ func NewUserService(userRepository repository.UserRepository) UserService {
 }
 
 // FindByID 根据 ID 查询用户
-func (u *UserServiceImpl) FindByID(id int64) (*model.User, error) {
+func (u *UserServiceImpl) FindByID(ctx context.Context, id int64) (*model.User, error) {
 	return u.userRepository.FindByID(id)
 }
 
 // IsExist 判断用户名是否存在
-func (u *UserServiceImpl) IsExist(username string) (bool, error) {
+func (u *UserServiceImpl) IsExist(ctx context.Context, username string) (bool, error) {
 	exist, err := u.userRepository.IsExist(username)
 	return exist, err
 }
 
 // Create 创建用户并处理密码加密
-func (u *UserServiceImpl) Create(user *model.User) error {
+func (u *UserServiceImpl) Create(ctx context.Context, user *model.User) error {
 	if user == nil {
 		return errors.New("用户不能为空")
 	}
@@ -91,7 +91,7 @@ func (u *UserServiceImpl) Register(ctx context.Context, user *model.User) error 
 }
 
 // Login 校验用户名密码并返回用户信息
-func (u *UserServiceImpl) Login(username string, password string) (*model.User, error) {
+func (u *UserServiceImpl) Login(ctx context.Context, username string, password string) (*model.User, error) {
 	user, err := u.userRepository.FindByUsername(username)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

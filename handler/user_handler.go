@@ -47,13 +47,19 @@ func UserRegister(c *gin.Context) {
 
 // UserLogin 用户登录
 func UserLogin(c *gin.Context) {
-	username := c.PostForm("username")
-	password := c.PostForm("password")
+	var loginReq struct {
+		Username string `json:"username" binding:"required"`
+		Password string `json:"password" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&loginReq); err != nil {
+		ParamError(c, "参数错误")
+		return
+	}
 	con, ok := getContainerOrFail(c)
 	if !ok {
 		return
 	}
-	user, err := con.UserService.Login(username, password)
+	user, err := con.UserService.Login(c.Request.Context(), loginReq.Username, loginReq.Password)
 	if err != nil {
 		Fail(c, "用户名或密码错误")
 		return
@@ -90,7 +96,7 @@ func GetUserInfo(c *gin.Context) {
 	}
 	// 获取用户服务
 	userService := con.UserService
-	user, err := userService.FindByID(userID.(int64))
+	user, err := userService.FindByID(c.Request.Context(), userID.(int64))
 	if err != nil {
 		log.Error("用户不存在")
 		Fail(c, "用户不存在")

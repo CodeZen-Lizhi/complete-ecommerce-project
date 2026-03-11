@@ -21,7 +21,7 @@ type User struct {
 	UpdateTime *time.Time `gorm:"column:update_time;type:datetime" comment:"更新时间"`
 }
 
-//字段有指针 可以存 null 不加指针就会有默认值
+// 字段使用指针类型可以存储 NULL 值，非指针类型会使用默认值
 
 // TableName 自定义表名
 func (u *User) TableName() string {
@@ -30,7 +30,7 @@ func (u *User) TableName() string {
 
 // BeforeCreate 创建前钩子：自动填充创建时间和更新时间
 func (u *User) BeforeCreate(tx *gorm.DB) error {
-	now := time.Now() // 获取当前时间（time.Time类型）
+	now := time.Now()
 	delFlag := "0"
 	u.CreateTime = &now
 	u.UpdateTime = &now
@@ -42,14 +42,14 @@ func (u *User) BeforeCreate(tx *gorm.DB) error {
 // BeforeUpdate 更新前钩子：自动更新更新时间
 func (u *User) BeforeUpdate(tx *gorm.DB) error {
 	now := time.Now()
-	u.UpdateTime = &now // 取地址赋值
+	u.UpdateTime = &now
 	return nil
 }
 
-// UserVo 定义用户请求/响应传输对象。
+// UserVo 定义用户请求/响应传输对象
 type UserVo struct {
-	//`,string` 表示在 JSON 序列化和反序列化过程中，该 `int64` 类型的字段将被当作字符串处理。
-	//这通常用于防止 JavaScript 等语言在处理大整数时出现精度丢失的问题
+	// `,string` 表示在 JSON 序列化和反序列化过程中，该 `int64` 类型的字段将被当作字符串处理
+	// 这通常用于防止 JavaScript 等语言在处理大整数时出现精度丢失的问题
 	ID       int64  `json:"id,string"`
 	Username string `json:"username"`
 	Email    string `json:"email"`

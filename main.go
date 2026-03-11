@@ -26,7 +26,7 @@ func main() {
 	configErr := config.Init()
 	if configErr != nil {
 		slog.Error("初始化配置文件错误", "error", configErr)
-		panic("初始化配置文件错误")
+		os.Exit(1)
 	}
 
 	// 初始化日志
