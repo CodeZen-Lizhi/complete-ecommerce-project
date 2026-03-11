@@ -14,9 +14,9 @@ import (
 
 // UserRegister 用户注册
 func UserRegister(c *gin.Context) {
-	var userVo model.UserVo
-	//接收参数
-	if err := c.ShouldBindJSON(&userVo); err != nil {
+	var userVO model.UserVo
+	// 接收参数
+	if err := c.ShouldBindJSON(&userVO); err != nil {
 		ParamError(c, "参数错误")
 		return
 	}
@@ -25,15 +25,15 @@ func UserRegister(c *gin.Context) {
 		return
 	}
 	log := logger.GetLogger()
-	log.Info("用户注册", "username", userVo.Username, "email", userVo.Email, "age", userVo.Age)
+	log.Info("用户注册", "username", userVO.Username, "email", userVO.Email, "age", userVO.Age)
 	userService := con.UserService
 
-	//新增 用户
+	// 创建用户
 	user := model.User{
-		Username: userVo.Username,
-		Email:    userVo.Email,
-		Password: userVo.Password,
-		Age:      userVo.Age,
+		Username: userVO.Username,
+		Email:    userVO.Email,
+		Password: userVO.Password,
+		Age:      userVO.Age,
 	}
 	if err := userService.Register(c.Request.Context(), &user); err != nil {
 		if errors.Is(err, service.ErrUserAlreadyExists) {
@@ -78,19 +78,18 @@ func GetCaptcha(c *gin.Context) {
 
 // GetUserInfo 获取个人信息
 func GetUserInfo(c *gin.Context) {
-	// 从上下文获取用户ID
 	log := logger.GetLogger()
 	userID, exists := c.Get(util.CurrentUserId)
 	if !exists {
-		log.Error("未获取到用户id")
-		Fail(c, "未获取到用户id")
+		log.Error("未获取到用户 ID")
+		Fail(c, "未获取到用户 ID")
 		return
 	}
 	con, ok := getContainerOrFail(c)
 	if !ok {
 		return
 	}
-	//手写注入
+	// 获取用户服务
 	userService := con.UserService
 	user, err := userService.FindByID(userID.(uint64))
 	if err != nil {
@@ -101,7 +100,7 @@ func GetUserInfo(c *gin.Context) {
 	Success(c, user)
 }
 
-// getContainerOrFail 获取已注入容器，不存在时直接返回统一错误响应。
+// getContainerOrFail 获取已注入容器，不存在时直接返回统一错误响应
 func getContainerOrFail(c *gin.Context) (*container.Container, bool) {
 	log := logger.GetLogger()
 	con, err := container.GetContainer(c)
@@ -135,7 +134,6 @@ func ChangePwd(c *gin.Context) {
 
 // UserOrderList 查看我的订单
 func UserOrderList(c *gin.Context) {
-	// 从上下文获取用户ID
 	userID, _ := c.Get(util.CurrentUserId)
 
 	Success(c, gin.H{

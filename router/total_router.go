@@ -27,7 +27,6 @@ func InitTotalRouter(logger *slog.Logger, container *container.Container) *gin.E
 	private.Use(middleware.AuthMiddleware()) // 添加认证中间件
 	{
 		registerUserPrivateRoutes(private)
-		registerOrderPrivateRoutes(private)
 	}
 
 	// 3. 管理员路由组（需管理员权限）
@@ -35,7 +34,6 @@ func InitTotalRouter(logger *slog.Logger, container *container.Container) *gin.E
 	admin.Use(middleware.AuthMiddleware(), middleware.AdminAuthMiddleware()) // 双重验证
 	{
 		registerProductAdminRoutes(admin)
-		registerOrderAdminRoutes(admin)
 	}
 
 	return r

@@ -4,8 +4,10 @@ import (
 	"ecommerce/repository"
 	"ecommerce/service"
 	"errors"
-	"github.com/gin-gonic/gin"
 	"sync"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 // Container 依赖容器
@@ -21,13 +23,13 @@ var (
 // ContainerKey 用于 Gin Context 存储的键
 const ContainerKey = "container"
 
-// GetInstance 获取容器单例
-func GetInstance() *Container {
+// GetInstance 获取容器单例（显式注入 DB）
+func GetInstance(db *gorm.DB) *Container {
 	once.Do(func() {
-		userRepository := repository.NewUserRepository()
+		// 手动组装依赖（依赖关系清晰）
+		userRepository := repository.NewUserRepository(db)
 		userService := service.NewUserService(userRepository)
 
-		// 5. 组装容器
 		instance = &Container{
 			UserService: userService,
 		}

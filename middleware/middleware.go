@@ -21,6 +21,14 @@ import (
 	"github.com/google/uuid"
 )
 
+// contextKey 自定义类型，避免 context key 冲突
+type contextKey string
+
+const (
+	// RequestIDKey 请求 ID 的 context key
+	RequestIDKey contextKey = "request_id"
+)
+
 // CorsMiddleware 处理跨域请求
 func CorsMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -120,7 +128,7 @@ func AdminAuthMiddleware() gin.HandlerFunc {
 	}
 }
 
-// RequestIdMiddleware 在 Gin 中间件中生成 request_id 链路追踪
+// RequestIdMiddleware 在 Gin 中间件中生成 request_id 用于链路追踪
 func RequestIdMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 优先使用客户端传入的 X-Request-ID
@@ -129,9 +137,8 @@ func RequestIdMiddleware() gin.HandlerFunc {
 			rid = uuid.New().String()
 		}
 		c.Set("X-Request-ID", rid)
-		c.Request = c.Request.WithContext(context.WithValue(c.Request.Context(), "request_id", rid))
+		c.Request = c.Request.WithContext(context.WithValue(c.Request.Context(), RequestIDKey, rid))
 
-		// 日志中加入 request_id
 		c.Next()
 	}
 }

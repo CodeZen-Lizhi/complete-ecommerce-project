@@ -2,7 +2,6 @@ package repository
 
 import (
 	"ecommerce/internal/logger"
-	"ecommerce/internal/mysql"
 	"ecommerce/model"
 	"errors"
 	"fmt"
@@ -12,7 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// UserRepository 定义接口
+// UserRepository 用户仓储接口
 type UserRepository interface {
 	WithDB(db *gorm.DB) UserRepository
 	FindByID(id uint64) (*model.User, error)
@@ -20,30 +19,23 @@ type UserRepository interface {
 	FindByUsername(username string) (*model.User, error)
 	Create(user *model.User) error
 	Update(user *model.User) error
-	IzExist(username string) (bool, error)
+	IsExist(username string) (bool, error)
 }
 
-// UserRepositoryImpl 实现接口
+// UserRepositoryImpl 用户仓储实现
 type UserRepositoryImpl struct {
 	db *gorm.DB
 }
 
-// NewUserRepository 构造函数注入
-func NewUserRepository() UserRepository {
-	return &UserRepositoryImpl{
-		db: mysql.DB,
-	}
-}
-
-// NewUserRepositoryWithDB 使用指定 DB（含事务 tx）构造用户仓储实例。
-func NewUserRepositoryWithDB(db *gorm.DB) UserRepository {
+// NewUserRepository 构造函数（显式注入 DB）
+func NewUserRepository(db *gorm.DB) UserRepository {
 	return &UserRepositoryImpl{db: db}
 }
 
-// 此段代码可以确保结构体实现了接口的所有方法，否则编译会出错
+// 编译时检查接口实现
 var _ UserRepository = (*UserRepositoryImpl)(nil)
 
-// WithDB 返回绑定到指定 DB 的仓储实例。
+// WithDB 返回绑定到指定 DB 的仓储实例
 func (r *UserRepositoryImpl) WithDB(db *gorm.DB) UserRepository {
 	if db == nil {
 		return r
@@ -51,7 +43,7 @@ func (r *UserRepositoryImpl) WithDB(db *gorm.DB) UserRepository {
 	return &UserRepositoryImpl{db: db}
 }
 
-// FindByEmail 根据邮箱查询用户。
+// FindByEmail 根据邮箱查询用户
 func (r *UserRepositoryImpl) FindByEmail(email string) (*model.User, error) {
 	var user model.User
 	tx := r.db.Where("email = ? and del_flag = ?", email, "0").First(&user)
@@ -61,19 +53,19 @@ func (r *UserRepositoryImpl) FindByEmail(email string) (*model.User, error) {
 	return &user, nil
 }
 
-// Create 创建用户记录。
+// Create 创建用户记录
 func (r *UserRepositoryImpl) Create(user *model.User) error {
 	tx := r.db.Create(user)
 	return wrapRepoError("UserRepositoryImpl.Create", tx.Error)
 }
 
-// Update 更新用户记录。
+// Update 更新用户记录
 func (r *UserRepositoryImpl) Update(user *model.User) error {
 	tx := r.db.Updates(user)
 	return wrapRepoError("UserRepositoryImpl.Update", tx.Error)
 }
 
-// FindByID 根据ID查询用户。
+// FindByID 根据 ID 查询用户
 func (r *UserRepositoryImpl) FindByID(id uint64) (*model.User, error) {
 	var user model.User
 	tx := r.db.First(&user, id)
@@ -85,20 +77,20 @@ func (r *UserRepositoryImpl) FindByID(id uint64) (*model.User, error) {
 	return &user, nil
 }
 
-// IzExist 判断用户名是否已存在。
-func (r *UserRepositoryImpl) IzExist(username string) (bool, error) {
+// IsExist 判断用户名是否已存在
+func (r *UserRepositoryImpl) IsExist(username string) (bool, error) {
 	var user model.User
 	tx := r.db.Where("username = ? and del_flag = ?", username, "0").First(&user)
 	if tx.Error != nil {
 		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
 			return false, nil
 		}
-		return false, wrapRepoError("UserRepositoryImpl.IzExist", tx.Error)
+		return false, wrapRepoError("UserRepositoryImpl.IsExist", tx.Error)
 	}
 	return tx.RowsAffected > 0, nil
 }
 
-// FindByUsername 根据用户名查询用户。
+// FindByUsername 根据用户名查询用户
 func (r *UserRepositoryImpl) FindByUsername(username string) (*model.User, error) {
 	var user model.User
 	tx := r.db.Where("username = ? and del_flag = ?", username, "0").First(&user)
@@ -108,7 +100,7 @@ func (r *UserRepositoryImpl) FindByUsername(username string) (*model.User, error
 	return &user, nil
 }
 
-// wrapRepoError 包装仓储层错误并附带代码行信息。
+// wrapRepoError 包装仓储层错误并附带代码行信息
 func wrapRepoError(operation string, err error) error {
 	if err == nil {
 		return nil
