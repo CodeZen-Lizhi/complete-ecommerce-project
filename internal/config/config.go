@@ -53,8 +53,9 @@ type MySQLConfig struct {
 
 // LogConfig 日志配置。
 type LogConfig struct {
-	Level    string `mapstructure:"level"`
-	Encoding string `mapstructure:"encoding"`
+	Level     string `mapstructure:"level"`
+	Encoding  string `mapstructure:"encoding"`
+	AddSource bool   `mapstructure:"add_source"`
 }
 
 // JwtConfig JWT配置。

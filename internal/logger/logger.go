@@ -19,23 +19,23 @@ func InitLogConfig() error {
 	once.Do(func() {
 		// 解析日志级别
 		level := parseLevel(cfg.Level)
+		options := &slog.HandlerOptions{
+			AddSource: cfg.AddSource,
+			Level:     level,
+			ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+				if a.Key == slog.TimeKey {
+					return slog.String("time", a.Value.Time().Format("2006-01-02 15:04:05.000"))
+				}
+				return a
+			},
+		}
 		// 配置日志处理器
 		var handler slog.Handler
 		switch cfg.Encoding {
 		case "json":
-			handler = slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
-				if a.Key == slog.TimeKey {
-					return slog.String("time", a.Value.Time().Format("2006-01-02 15:04:05.000"))
-				}
-				return a
-			}, Level: level})
+			handler = slog.NewJSONHandler(os.Stdout, options)
 		default: // console 格式
-			handler = slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
-				if a.Key == slog.TimeKey {
-					return slog.String("time", a.Value.Time().Format("2006-01-02 15:04:05.000"))
-				}
-				return a
-			}, Level: level})
+			handler = slog.NewTextHandler(os.Stdout, options)
 		}
 		// 创建日志实例
 		instance = slog.New(handler)

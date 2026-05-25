@@ -22,6 +22,7 @@ mysql:
 log:
   level: "debug"
   encoding: "console"
+  add_source: true
 
 jwt:
   secret: "change_me_to_a_random_secret"
