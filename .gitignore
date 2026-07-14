@@ -92,3 +92,6 @@ ecommerce-*
 .ace-tool/
 .serena/
 .cache/
+.claude
+.codex
+.agents
