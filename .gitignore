@@ -91,3 +91,4 @@ ecommerce-*
 .local/
 .ace-tool/
 .serena/
+.cache/
