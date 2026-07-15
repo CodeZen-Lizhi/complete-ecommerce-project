@@ -170,3 +170,36 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 6: 归档会话历史截断练习
+
+**Date**: 2026-07-15
+**Task**: 归档会话历史截断练习
+**Branch**: `master`
+
+### Summary
+
+确认阶段 2 会话历史截断与用户隔离练习验收完成，归档遗漏任务；代码已包含在编号化 AI 练习提交中。
+
+### Main Changes
+
+- Detailed change bullets were not supplied; see the summary above.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `44a427b` | (see git log) |
+
+### Testing
+
+- Validation was not recorded for this session.
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
