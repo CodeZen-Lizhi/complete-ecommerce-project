@@ -37,3 +37,36 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 2: 完成 System Prompt 角色对照练习
+
+**Date**: 2026-07-15
+**Task**: 完成 System Prompt 角色对照练习
+**Branch**: `master`
+
+### Summary
+
+完成基于 Eino AgenticModel 和 Responses API 的 System Prompt 角色对照练习，验证相同 User Prompt 在不同角色约束下的输出差异，并通过目标包测试和 go vet。
+
+### Main Changes
+
+- Detailed change bullets were not supplied; see the summary above.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f2bcf3f` | (see git log) |
+
+### Testing
+
+- Validation was not recorded for this session.
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
