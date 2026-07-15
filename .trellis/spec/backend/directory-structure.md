@@ -59,7 +59,30 @@ docs/                   项目文档和学习路线
 
 ## 独立学习示例
 
-`examples/ai/phase2/basic_chat` 是学习代码，不接入 `main.go`、Container 或生产 Router。后续学习练习遵循 `docs/ai-learning/go-eino-ai-engineer-roadmap.md` 的“骨架 + 中文 TODO”规范；只有明确要求产品化时才迁入正式分层。
+`examples/ai/phase2/01_basic_chat` 是学习代码，不接入 `main.go`、Container 或生产 Router。后续学习练习遵循 `docs/ai-learning/go-eino-ai-engineer-roadmap.md` 的“骨架 + 中文 TODO”规范；只有明确要求产品化时才迁入正式分层。
+
+### AI 练习目录约定
+
+- 学习路线使用 `examples/ai/phase1/` 至 `phase7/`，阶段内目录固定为两位数字前缀的 `NN_<slug>`，例如 `07_chat_template`。
+- 阶段 1 目录只做现有电商项目的任务导航，不复制生产业务代码；阶段 2–7 提供隔离的可编译 Go 骨架。
+- 每个练习必须包含中文 `README.md`；阶段 2–7 还必须包含 `main.go`，阶段 3–7 使用 `exercise.go` 保存题目专属接口和函数签名。核心步骤使用连续编号的中文 TODO，并在未完成时明确退出。
+- 默认占位配置必须在模型、Redis、数据库或向量库客户端创建前校验，避免骨架运行产生真实请求或外部写入。
+- 新增、删除或重排练习后必须更新 `examples/ai/README.md`，并运行 `go test -timeout=60s ./examples/ai` 验证 7 个阶段、60 个目录、连续编号和必需文件。
+
+正确目录：
+
+```text
+examples/ai/phase3/01_embedding_similarity/
+├── README.md
+└── main.go
+```
+
+错误目录：
+
+```text
+examples/ai/phase3/embedding/     # 缺少阶段内顺序
+examples/ai/common/               # 让练习之间形成隐式答案依赖
+```
 
 ## 不要复制的现有占位
 

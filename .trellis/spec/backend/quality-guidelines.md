@@ -5,7 +5,7 @@
 - Go 版本：`go.mod` 中的 `go 1.25`。
 - 格式化：标准 `gofmt`。
 - 基础验证：`go test ./...` 和 `go vet ./...`。
-- 仓库当前没有 `_test.go`，因此测试覆盖是明确缺口，不得声称已有单元测试保护。
+- AI 学习示例已有 `examples/ai/catalog_test.go` 和 `examples/ai/phase2/03_prompt_roles/main_test.go`；生产 Handler、Service、Repository 仍缺少系统化测试，不得用示例测试替代生产行为覆盖。
 - 没有仓库级 golangci-lint、Makefile 或已跟踪 Dockerfile；不要编造对应命令。
 
 ## 实现要求

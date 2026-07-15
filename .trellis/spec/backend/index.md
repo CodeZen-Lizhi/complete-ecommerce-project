@@ -50,7 +50,7 @@ main.go
 
 ## 当前已知边界
 
-- 仓库目前没有 `_test.go` 文件；不能把“`go test` 可执行”表述成已有行为覆盖。
+- 生产 Handler、Service、Repository 仍缺少系统化测试；AI 学习示例已有目录契约测试和少量行为测试，不能把示例测试表述成生产业务覆盖。
 - `handler/product_handler.go` 及部分用户接口仍返回假数据或仅回显表单。
 - `AdminAuthMiddleware` 当前信任客户端 `Role` Header，这是已知安全缺口，不得扩展为新权限模型。
 - Repository 现有接口未全面接收 `context.Context`；新代码应补齐传播，旧接口需单独任务迁移。
