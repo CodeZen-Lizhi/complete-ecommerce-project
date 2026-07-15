@@ -70,3 +70,36 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 3: 完成程序内多轮对话练习
+
+**Date**: 2026-07-15
+**Task**: 完成程序内多轮对话练习
+**Branch**: `master`
+
+### Summary
+
+完成 Eino ResponsesModel 程序内两轮对话练习，正确保存完整 Assistant 消息并重组历史，为每轮调用设置独立超时，补齐错误处理和输出标签，同时清理源码中的真实格式 API Key。
+
+### Main Changes
+
+- Detailed change bullets were not supplied; see the summary above.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `0033d2c` | (see git log) |
+
+### Testing
+
+- Validation was not recorded for this session.
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
