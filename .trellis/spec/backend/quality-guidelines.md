@@ -12,10 +12,30 @@
 
 - 保持最小、聚焦的 diff，不做无关格式化或重构。
 - 优先使用现有 Container、响应辅助函数、事务封装、Logger 和 Context Key。
-- 导出符号写简洁中文注释；注释解释职责、约束或取舍。
+- 新增函数和方法无论是否导出，都写简洁中文注释；具体格式见“函数与方法注释约定”。
 - 函数保持单一职责、浅嵌套和明确错误返回。
 - 新依赖前先确认标准库和现有依赖不能满足需求，并说明维护与安全影响。
 - 不修改或覆盖用户未提交的工作区改动。
+
+## 函数与方法注释约定
+
+- 每个新增 Go 函数和方法都必须在声明正上方写中文注释，包括 `main`、构造函数、私有辅助函数、接收者方法和接口方法。
+- 注释以函数或方法名开头，说明职责；存在重要输入、返回语义、错误边界或副作用时一并说明。
+- 注释解释契约和约束，不逐行复述函数体，也不使用“处理数据”“执行逻辑”这类无法帮助调用者判断行为的空泛描述。
+
+正确示例：
+
+```go
+// Load 按 session ID 读取并反序列化完整消息历史；空历史返回空切片和 nil 错误。
+func (s *redisHistoryStore) Load(ctx context.Context, sessionID string) ([]*schema.AgenticMessage, error)
+```
+
+错误示例：
+
+```go
+// 加载数据。
+func (s *redisHistoryStore) Load(ctx context.Context, sessionID string) ([]*schema.AgenticMessage, error)
+```
 
 ## 测试策略
 

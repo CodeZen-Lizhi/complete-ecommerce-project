@@ -54,7 +54,7 @@ docs/                   项目文档和学习路线
 - 包名使用小写单词；当前模块导入前缀为 `ecommerce/...`。
 - 分层文件沿用 `<feature>_handler.go`、`<feature>_service.go`、`<feature>_repository.go`、`<feature>_router.go`。
 - 导出类型和函数使用 Go 的 PascalCase；现有接口采用 `UserService` / `UserRepository`，实现采用 `UserServiceImpl` / `UserRepositoryImpl`。
-- 每个新增导出符号写简洁中文注释，说明职责或契约，不复述语法。
+- 每个新增函数和方法无论是否导出，都写简洁中文职责注释；详细格式遵循 `quality-guidelines.md` 的“函数与方法注释约定”。
 - 仅供包内路由注册的函数保持小写，例如 `registerUserPublicRoutes`。
 
 ## 独立学习示例
