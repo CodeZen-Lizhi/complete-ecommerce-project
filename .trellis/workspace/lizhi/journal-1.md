@@ -103,3 +103,36 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 4: 完成 Redis 会话历史练习
+
+**Date**: 2026-07-15
+**Task**: 完成 Redis 会话历史练习
+**Branch**: `master`
+
+### Summary
+
+完成基于 Eino ResponsesModel 和 Redis List 的 session 会话历史练习，按轮次区分完整模型上下文与待持久化消息，补齐 session 校验、JSON 编解码、错误上下文、中文函数注释规范及敏感 Key 清理。
+
+### Main Changes
+
+- Detailed change bullets were not supplied; see the summary above.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `853f3d3` | (see git log) |
+
+### Testing
+
+- Validation was not recorded for this session.
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
