@@ -1,0 +1,70 @@
+name: ai-learning-stack
+
+services:
+  mysql:
+    image: mysql:8.4
+    profiles: ["exercise"]
+    environment:
+      MYSQL_DATABASE: ai_learning
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD in your shell}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7.4-alpine
+    profiles: ["exercise"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  qdrant:
+    image: qdrant/qdrant:v1.15
+    profiles: ["exercise"]
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant-data:/qdrant/storage
+    healthcheck:
+      test: ["CMD", "bash", "-c", "</dev/tcp/localhost/6333"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  app:
+    image: ${AI_APP_IMAGE:-local/ai-learning-app:exercise}
+    profiles: ["app"]
+    environment:
+      MYSQL_DSN: root:${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD in your shell}@tcp(mysql:3306)/ai_learning
+      REDIS_ADDR: redis:6379
+      VECTOR_BASE_URL: http://qdrant:6333
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-replace-with-your-api-key}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+
+  # TODO 1：为当前仓库补充安全的多阶段 Dockerfile，并通过 AI_APP_IMAGE 指向本地构建镜像。
+  # TODO 2：应用启动时拒绝 OPENAI_API_KEY 占位符，并提供 /health/live 与 /health/ready。
+
+volumes:
+  mysql-data:
+  redis-data:
+  qdrant-data:

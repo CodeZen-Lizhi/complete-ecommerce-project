@@ -1,0 +1,2 @@
+{"id":"go-context-001","query":"context.Context 如何取消下游调用？","relevant_chunk_ids":["go-context-cancel"],"expected_facts":["取消信号沿调用链传播"],"expected_tools":[],"tags":["go","context","basic"]}
+{"id":"order-tool-001","query":"查询订单 ORD-1001 的物流状态","relevant_chunk_ids":[],"expected_facts":["只允许查询当前用户订单"],"expected_tools":["get_order_logistics"],"tags":["tool","authorization"]}
