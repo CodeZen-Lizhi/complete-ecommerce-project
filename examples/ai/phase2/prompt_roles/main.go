@@ -14,7 +14,7 @@ import (
 const (
 	baseURL        = "http://localhost:8084/v1"
 	modelName      = "gpt-5.4-mini"
-	apiKey         = "sk-qWpIk8nVsa8VGJyNHtcAS4VaMhCDJB1z"
+	apiKey         = "replace-with-your-api-key"
 	requestTimeout = 30 * time.Second
 )
 
@@ -75,7 +75,7 @@ func main() {
 }
 
 func newAgenticModel(ctx context.Context) (einomodel.AgenticModel, error) {
-	if strings.TrimSpace(apiKey) == "" {
+	if strings.TrimSpace(apiKey) == "" || apiKey == "replace-with-your-api-key" {
 		return nil, fmt.Errorf("API Key 未配置")
 	}
 
