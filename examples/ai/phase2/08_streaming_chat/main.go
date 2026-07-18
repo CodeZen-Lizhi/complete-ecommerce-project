@@ -16,14 +16,13 @@ import (
 
 const (
 	baseURL       = "http://localhost:8084/v1"
-	apiKey        = "replace-with-your-api-key"
+	apiKeyEnv     = "OPENAI_API_KEY"
 	modelName     = "gpt-5.4-mini"
 	streamTimeout = 30 * time.Second
 )
 
 var (
-	errExerciseIncomplete                         = errors.New("练习尚未完成，请按 TODO 顺序实现")
-	_                     einomodel.BaseChatModel = (*openai.ChatModel)(nil)
+	_ einomodel.BaseChatModel = (*openai.ChatModel)(nil)
 )
 
 // main 创建 ChatModel，并把流式响应逐块写到标准输出。
@@ -51,7 +50,8 @@ func newChatModel(ctx context.Context) (einomodel.BaseChatModel, error) {
 	if ctx == nil {
 		return nil, errors.New("Context 不能为空")
 	}
-	if strings.TrimSpace(apiKey) == "" || apiKey == "replace-with-your-api-key" {
+	apiKey := strings.TrimSpace(os.Getenv(apiKeyEnv))
+	if apiKey == "" || apiKey == "replace-with-your-api-key" {
 		return nil, errors.New("API Key 未配置")
 	}
 
@@ -89,10 +89,47 @@ func streamAnswer(
 	}
 
 	// TODO 1：调用 chatModel.Stream(ctx, messages)，检查创建流时的错误。
+	stream, err := chatModel.Stream(ctx, messages)
+	if err != nil {
+		return fmt.Errorf("创建流式响应失败: %w", err)
+	}
+	defer stream.Close()
 	// TODO 2：成功后立即 defer reader.Close()；当前 Eino 版本 Close 没有返回值。
 	// TODO 3：循环调用 reader.Recv()。errors.Is(err, io.EOF) 表示正常结束；
+	receivedText := false
+	for {
+		chunk, err := stream.Recv()
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		if err != nil {
+			switch {
+			case errors.Is(err, context.Canceled):
+				return fmt.Errorf("流式请求被取消: %w", err)
+
+			case errors.Is(err, context.DeadlineExceeded):
+				return fmt.Errorf("流式请求超时: %w", err)
+
+			default:
+				return fmt.Errorf("接收流式响应失败: %w", err)
+			}
+		}
+		if chunk == nil {
+			return errors.New("流式响应块不能为空")
+		}
+		if chunk.Content == "" {
+			continue
+		}
+		if _, err := io.WriteString(writer, chunk.Content); err != nil {
+			return fmt.Errorf("写入流式响应失败: %w", err)
+		}
+		receivedText = true
+	}
 	// Context 取消或 DeadlineExceeded 要保留原因返回，其他中途错误使用 %w 包装。
 	// TODO 4：拒绝 nil chunk；把每个 chunk.Content 写入 writer，并检查写入错误。
 	// TODO 5：至少收到一个非空文本块才算成功；空流返回明确错误。
-	return errExerciseIncomplete
+	if !receivedText {
+		return errors.New("流式响应为空")
+	}
+	return nil
 }

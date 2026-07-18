@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -17,7 +18,7 @@ import (
 const (
 	baseURL         = "http://localhost:8084/v1"
 	modelName       = "gpt-5.4-mini"
-	apiKey          = "replace-with-your-api-key"
+	apiKeyEnv       = "OPENAI_API_KEY"
 	redisAddr       = "localhost:6379"
 	requestTimeout  = 30 * time.Second
 	exerciseTimeout = 90 * time.Second
@@ -36,8 +37,7 @@ const (
 )
 
 var (
-	errExerciseIncomplete                        = errors.New("练习尚未完成，请按 TODO 顺序实现")
-	_                     einomodel.AgenticModel = (*agenticopenai.ResponsesModel)(nil)
+	_ einomodel.AgenticModel = (*agenticopenai.ResponsesModel)(nil)
 )
 
 type historyStore interface {
@@ -93,6 +93,7 @@ func newAgenticModel(ctx context.Context) (einomodel.AgenticModel, error) {
 	if ctx == nil {
 		return nil, errors.New("Context 不能为空")
 	}
+	apiKey := strings.TrimSpace(os.Getenv(apiKeyEnv))
 	if err := validateAPIKey(apiKey); err != nil {
 		return nil, err
 	}
@@ -354,17 +355,48 @@ func runTurn(
 	// TODO 6：从 Redis 读取当前用户、当前 session 的最近历史。
 	// 调用 store.LoadRecent(ctx, userID, sessionID)；不要复用上一轮函数留下的内存切片。
 	// 错误需要补充轮次、user ID 和 session ID 上下文。
+	recent, err := store.LoadRecent(ctx, userID, sessionID)
+	if err != nil {
+		return "", fmt.Errorf(
+			"第 %d 轮读取用户 %q、session %q 的最近历史失败: %w",
+			turn,
+			userID,
+			sessionID,
+			err,
+		)
+	}
 
+	currentUserMessage := schema.UserAgenticMessage(userPrompt)
+	messages := make([]*schema.AgenticMessage, 0, len(recent)+2)
 	// TODO 7：按 System -> 最近历史 -> 当前 User 重组模型输入。
 	// 新建 messages，先放 schema.SystemAgenticMessage(systemPrompt)，再追加 LoadRecent 返回的 User/Assistant，
 	// 最后创建当前 User Message 并追加。System Message 不写 Redis，每次调用都重新注入且只出现一次。
-
+	messages = append(messages, schema.SystemAgenticMessage(systemPrompt))
+	messages = append(messages, recent...)
+	messages = append(messages, currentUserMessage)
 	// TODO 8：调用 generateTurn，并提取 Assistant 文本。
 	// 模型或文本解析失败时直接返回，不能调用 AppendTurn，避免 Redis 中出现没有 Assistant 的半轮对话。
-
+	message, err := generateTurn(ctx, agenticModel, messages, turn)
 	// TODO 9：成功后保存当前 User 和完整 Assistant Message。
 	// 调用 store.AppendTurn；保存失败时用轮次、user ID 和 session ID 包装错误；成功时返回 TODO 8 提取的文本。
-	return "", errExerciseIncomplete
+	if err != nil {
+		return "", err
+	}
+	text, err := assistantText(message)
+	if err != nil {
+		return "", fmt.Errorf("第 %d 轮提取 Assistant 文本失败: %w", turn, err)
+	}
+	err = store.AppendTurn(ctx, userID, sessionID, currentUserMessage, message)
+	if err != nil {
+		return "", fmt.Errorf(
+			"第 %d 轮保存用户 %q、session %q 的完整对话失败: %w",
+			turn,
+			userID,
+			sessionID,
+			err,
+		)
+	}
+	return text, nil
 }
 
 // runExercise 演示同一用户连续对话，以及不同用户使用同名 session 时的历史隔离。
@@ -376,11 +408,27 @@ func runExercise(
 	// TODO 10：使用 demoUserID 和 demoSessionID 顺序执行两轮关联对话。
 	// 第一轮使用 firstUserPrompt，第二轮使用 secondUserPrompt；分别打印 User Prompt 和 Assistant 回答。
 	// 第二轮必须能看到第一轮历史，而每次 runTurn 都应重新从 Redis 加载，不能依赖进程内 messages。
+	firstAnswer, err := runTurn(ctx, agenticModel, store, demoUserID, demoSessionID, firstUserPrompt, 1)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("User: %s\nAssistant: %s\n", firstUserPrompt, firstAnswer)
+	secondAnswer, err := runTurn(ctx, agenticModel, store, demoUserID, demoSessionID, secondUserPrompt, 2)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("User: %s\nAssistant: %s\n", secondUserPrompt, secondAnswer)
 
 	// TODO 11：使用 otherDemoUserID 和相同 demoSessionID 发起隔离验证。
 	// 传入 isolatedUserQuery 并打印结果。因为 Redis Key 包含 user ID，新用户不应看到 demoUserID 的两轮历史。
 	// 完成后提示可使用 Redis TTL 命令观察过期时间，并返回 nil。
-	return errExerciseIncomplete
+	isolatedAnswer, err := runTurn(ctx, agenticModel, store, otherDemoUserID, demoSessionID, isolatedUserQuery, 1)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("User: %s\nAssistant: %s\n", isolatedUserQuery, isolatedAnswer)
+	fmt.Printf("可使用 Redis TTL 命令观察会话 Key 的剩余过期时间（当前 TTL：%s）。\n", sessionTTL)
+	return nil
 }
 
 // generateTurn 在独立超时内调用模型，并为错误补充轮次上下文。
