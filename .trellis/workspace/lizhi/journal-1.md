@@ -203,3 +203,36 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 7: 完成阶段 2 会话、模板与流式练习
+
+**Date**: 2026-07-18
+**Task**: 完成阶段 2 会话、模板与流式练习
+**Branch**: `master`
+
+### Summary
+
+完成阶段 2 练习 6-8：补齐会话历史重组与隔离、ChatTemplate 变量和顺序校验、ChatModel Stream 的 EOF/取消/空流处理；改用环境变量读取 API Key，并补充单元测试。
+
+### Main Changes
+
+- Detailed change bullets were not supplied; see the summary above.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `9b5a932` | (see git log) |
+
+### Testing
+
+- Validation was not recorded for this session.
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
