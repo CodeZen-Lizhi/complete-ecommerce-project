@@ -236,3 +236,36 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 8: 阶段二 AI 练习提交收口
+
+**Date**: 2026-07-18
+**Task**: 阶段二 AI 练习提交收口
+**Branch**: `master`
+
+### Summary
+
+补充会话角色不变量、失败路径测试与 API Key 文档，并完成双轮 Go 质量门禁。
+
+### Main Changes
+
+- Detailed change bullets were not supplied; see the summary above.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `8ffa28e` | (see git log) |
+
+### Testing
+
+- Validation was not recorded for this session.
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

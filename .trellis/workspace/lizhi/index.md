@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 7
+- **Total Sessions**: 8
 - **Last Active**: 2026-07-18
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~238 | Active |
+| `journal-1.md` | ~271 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 8 | 2026-07-18 | 阶段二 AI 练习提交收口 | `8ffa28e` | `master` |
 | 7 | 2026-07-18 | 完成阶段 2 会话、模板与流式练习 | `9b5a932` | `master` |
 | 6 | 2026-07-15 | 归档会话历史截断练习 | `44a427b` | `master` |
 | 5 | 2026-07-15 | 完成全阶段编号化 AI 练习 | `44a427b`, `f32569d` | `master` |
