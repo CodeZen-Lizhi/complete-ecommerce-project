@@ -15,10 +15,15 @@
 ## 开始练习
 
 ```bash
-go run ./examples/ai/phase2/08_streaming_chat
+env -u OPENAI_API_KEY go run ./examples/ai/phase2/08_streaming_chat
 ```
 
-默认 API Key 或外部服务配置保持占位符时，程序应明确提示配置未完成，不得连接外部服务或产生付费请求。
+缺少 `OPENAI_API_KEY` 时，程序应明确提示配置未完成，不得连接外部服务或产生付费请求。需要真实调用时，仅在本地通过环境变量注入：
+
+```bash
+export OPENAI_API_KEY="你的本地测试 Key"
+go run ./examples/ai/phase2/08_streaming_chat
+```
 
 ## 验证方式
 

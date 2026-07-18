@@ -6,9 +6,11 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	einomodel "github.com/cloudwego/eino/components/model"
 	"github.com/cloudwego/eino/schema"
+	"github.com/redis/go-redis/v9"
 )
 
 type fakeHistoryStore struct {
@@ -109,7 +111,9 @@ func TestDecodeHistoryValues(t *testing.T) {
 	t.Parallel()
 
 	userJSON := mustMarshalMessage(t, schema.UserAgenticMessage("hello"))
-	assistantJSON := mustMarshalMessage(t, schema.UserAgenticMessage("world"))
+	assistantJSON := mustMarshalMessage(t, newAssistantMessage("world"))
+	secondUserJSON := mustMarshalMessage(t, schema.UserAgenticMessage("second user"))
+	firstAssistantJSON := mustMarshalMessage(t, newAssistantMessage("first assistant"))
 
 	tests := []struct {
 		name    string
@@ -123,6 +127,8 @@ func TestDecodeHistoryValues(t *testing.T) {
 		{name: "空元素", values: []string{"", assistantJSON}, wantErr: true},
 		{name: "损坏 JSON", values: []string{"{", assistantJSON}, wantErr: true},
 		{name: "null 消息", values: []string{"null", assistantJSON}, wantErr: true},
+		{name: "User 后仍是 User", values: []string{userJSON, secondUserJSON}, wantErr: true},
+		{name: "第一条不是 User", values: []string{firstAssistantJSON, assistantJSON}, wantErr: true},
 	}
 
 	for _, test := range tests {
@@ -201,6 +207,80 @@ func TestRunTurnRejectsInvalidAssistantBeforeSaving(t *testing.T) {
 	}
 	if store.appendCalls != 0 {
 		t.Fatalf("解析失败时不应保存历史，实际保存 %d 次", store.appendCalls)
+	}
+}
+
+// TestRunTurnDoesNotSaveWhenModelFails 验证模型错误时不会写入任何会话历史。
+func TestRunTurnDoesNotSaveWhenModelFails(t *testing.T) {
+	t.Parallel()
+
+	wantErr := errors.New("模型调用失败")
+	store := &fakeHistoryStore{}
+	model := &fakeAgenticModel{err: wantErr}
+
+	_, err := runTurn(context.Background(), model, store, "user-1", "session-1", "问题", 1)
+	if !errors.Is(err, wantErr) {
+		t.Fatalf("模型错误链未保留: %v", err)
+	}
+	if store.appendCalls != 0 {
+		t.Fatalf("模型失败时不应保存历史，实际保存 %d 次", store.appendCalls)
+	}
+}
+
+// TestRunTurnPreservesAppendErrorContext 验证保存失败时保留底层错误和轮次、用户、会话上下文。
+func TestRunTurnPreservesAppendErrorContext(t *testing.T) {
+	t.Parallel()
+
+	wantErr := errors.New("Redis 写入失败")
+	store := &fakeHistoryStore{appendErr: wantErr}
+	model := &fakeAgenticModel{response: newAssistantMessage("回答")}
+
+	_, err := runTurn(context.Background(), model, store, "user-1", "session-1", "问题", 3)
+	if !errors.Is(err, wantErr) {
+		t.Fatalf("保存错误链未保留: %v", err)
+	}
+	for _, expected := range []string{"第 3 轮", `user-1`, `session-1`} {
+		if !strings.Contains(err.Error(), expected) {
+			t.Fatalf("保存错误缺少上下文 %q: %v", expected, err)
+		}
+	}
+	if store.appendCalls != 1 {
+		t.Fatalf("保存失败时 AppendTurn 调用次数 = %d，期望 1", store.appendCalls)
+	}
+}
+
+// TestAppendTurnRejectsInvalidRoles 验证写 Redis 前必须先满足 User/Assistant 角色契约。
+func TestAppendTurnRejectsInvalidRoles(t *testing.T) {
+	t.Parallel()
+
+	client := redis.NewClient(&redis.Options{Addr: "127.0.0.1:0"})
+	t.Cleanup(func() {
+		if err := client.Close(); err != nil {
+			t.Errorf("关闭测试 Redis Client 失败: %v", err)
+		}
+	})
+	store, err := newRedisHistoryStore(client, 1, time.Minute)
+	if err != nil {
+		t.Fatalf("创建测试历史存储失败: %v", err)
+	}
+
+	tests := []struct {
+		name      string
+		user      *schema.AgenticMessage
+		assistant *schema.AgenticMessage
+		wantText  string
+	}{
+		{name: "User 角色错误", user: newAssistantMessage("错误"), assistant: newAssistantMessage("回答"), wantText: "User Message 角色"},
+		{name: "Assistant 角色错误", user: schema.UserAgenticMessage("问题"), assistant: schema.UserAgenticMessage("错误"), wantText: "Assistant Message 角色"},
+	}
+	for _, test := range tests {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			err := store.AppendTurn(context.Background(), "user-1", "session-1", test.user, test.assistant)
+			if err == nil || !strings.Contains(err.Error(), test.wantText) {
+				t.Fatalf("期望角色错误包含 %q，实际为: %v", test.wantText, err)
+			}
+		})
 	}
 }
 

@@ -18,7 +18,7 @@
 go run ./examples/ai/phase2/07_chat_template
 ```
 
-默认 API Key 或外部服务配置保持占位符时，程序应明确提示配置未完成，不得连接外部服务或产生付费请求。
+程序只在本地渲染 System 和 User Message，不连接模型服务，也不需要 API Key。
 
 ## 验证方式
 

@@ -208,7 +208,7 @@ func (s *redisHistoryStore) LoadRecent(
 	return decodeHistoryValues(userID, sessionID, values)
 }
 
-// decodeHistoryValues 校验完整轮次，并把 Redis JSON 元素解码为非 nil 消息。
+// decodeHistoryValues 校验完整轮次和 User/Assistant 角色交替，并解码 Redis JSON 消息。
 func decodeHistoryValues(
 	userID string,
 	sessionID string,
@@ -228,7 +228,7 @@ func decodeHistoryValues(
 	messages := make([]*schema.AgenticMessage, 0, len(values))
 	// TODO 3：按 Redis 返回顺序反序列化消息，并校验消息数量为偶数。
 	// 使用 encoding/json 将每个元素解析为非 nil *schema.AgenticMessage，错误中包含用户、session 和下标。
-	// Redis 只保存完整轮次，因此奇数条消息表示数据损坏，应返回明确错误，不能把半轮历史发给模型。
+	// Redis 只保存完整轮次，因此奇数条或角色未交替都表示数据损坏，不能把错误上下文发给模型。
 	for index, value := range values {
 		if strings.TrimSpace(value) == "" {
 			return nil, fmt.Errorf(
@@ -257,6 +257,20 @@ func decodeHistoryValues(
 				index,
 			)
 		}
+		expectedRole := schema.AgenticRoleTypeUser
+		if index%2 == 1 {
+			expectedRole = schema.AgenticRoleTypeAssistant
+		}
+		if message.Role != expectedRole {
+			return nil, fmt.Errorf(
+				"用户 %q、session %q 的第 %d 条历史消息角色为 %q，期望 %q",
+				userID,
+				sessionID,
+				index,
+				message.Role,
+				expectedRole,
+			)
+		}
 		messages = append(messages, message)
 	}
 	return messages, nil
@@ -278,7 +292,7 @@ func (s *redisHistoryStore) AppendTurn(
 	}
 
 	// TODO 4：校验并序列化完整一轮消息。
-	// 调用 conversationKey；拒绝 nil User 或 Assistant；使用 encoding/json 分别编码完整 AgenticMessage。
+	// 调用 conversationKey；拒绝 nil 或角色不匹配的 User/Assistant；使用 encoding/json 分别编码完整 AgenticMessage。
 	// 两条消息必须一起准备完成后才能写 Redis，任何校验或编码失败都不能产生半轮数据。
 	key, err := conversationKey(userID, sessionID)
 	if err != nil {
@@ -294,6 +308,16 @@ func (s *redisHistoryStore) AppendTurn(
 	}
 	if assistantMessage == nil {
 		return errors.New("Assistant Message 不能为空")
+	}
+	if userMessage.Role != schema.AgenticRoleTypeUser {
+		return fmt.Errorf("User Message 角色为 %q，期望 %q", userMessage.Role, schema.AgenticRoleTypeUser)
+	}
+	if assistantMessage.Role != schema.AgenticRoleTypeAssistant {
+		return fmt.Errorf(
+			"Assistant Message 角色为 %q，期望 %q",
+			assistantMessage.Role,
+			schema.AgenticRoleTypeAssistant,
+		)
 	}
 
 	encodedUserMessage, err := json.Marshal(userMessage)
@@ -468,6 +492,9 @@ func generateTurn(
 func assistantText(message *schema.AgenticMessage) (string, error) {
 	if message == nil {
 		return "", errors.New("AgenticMessage 不能为空")
+	}
+	if message.Role != schema.AgenticRoleTypeAssistant {
+		return "", fmt.Errorf("AgenticMessage 角色为 %q，期望 %q", message.Role, schema.AgenticRoleTypeAssistant)
 	}
 
 	parts := make([]string, 0, len(message.ContentBlocks))

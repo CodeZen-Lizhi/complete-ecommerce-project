@@ -49,16 +49,21 @@ System -> 最近 N 轮 User/Assistant -> 当前 User
 ## 开始练习
 
 1. 打开 `main.go`，从 `TODO 1` 开始按编号实现，不要跳步。
-2. 保持默认 API Key 占位符，先验证骨架：
+2. 不设置 `OPENAI_API_KEY`，先验证缺少配置时会安全退出：
 
    ```bash
-   go run ./examples/ai/phase2/06_session_history_limits
+   env -u OPENAI_API_KEY go run ./examples/ai/phase2/06_session_history_limits
    ```
 
    此时应只提示 `API Key 未配置`，不会连接 Redis，也不会调用模型。
 
 3. 完成纯校验和 Redis 存储 TODO 后，确认本机 Redis 可用。
-4. 仅在本地临时配置自己的 API Key，不要提交真实密钥。
+4. 仅在本地通过环境变量配置自己的 API Key，不要提交真实密钥：
+
+   ```bash
+   export OPENAI_API_KEY="你的本地测试 Key"
+   ```
+
 5. 运行：
 
    ```bash
