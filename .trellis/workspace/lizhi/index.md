@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 9
+- **Total Sessions**: 10
 - **Last Active**: 2026-07-19
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~304 | Active |
+| `journal-1.md` | ~337 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 10 | 2026-07-19 | 修正 AI 练习 TODO 与配置入口 | `396d129` | `master` |
 | 9 | 2026-07-19 | 补齐 AI 学习路线真实组件练习 | `92f3f5a` | `master` |
 | 8 | 2026-07-18 | 阶段二 AI 练习提交收口 | `8ffa28e` | `master` |
 | 7 | 2026-07-18 | 完成阶段 2 会话、模板与流式练习 | `9b5a932` | `master` |

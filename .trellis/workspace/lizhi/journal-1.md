@@ -302,3 +302,36 @@
 ### Next Steps
 
 - None - task complete
+
+
+## Session 10: 修正 AI 练习 TODO 与配置入口
+
+**Date**: 2026-07-19
+**Task**: 修正 AI 练习 TODO 与配置入口
+**Branch**: `master`
+
+### Summary
+
+将阶段 2 结构化输出及阶段 3 至 7 练习的 TODO 移到具体填写位置，并为真实模型和外部组件增加顶部占位常量、配置数据流与目录契约。
+
+### Main Changes
+
+- Detailed change bullets were not supplied; see the summary above.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `396d129` | (see git log) |
+
+### Testing
+
+- Validation was not recorded for this session.
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
