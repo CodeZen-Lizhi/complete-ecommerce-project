@@ -20,13 +20,33 @@ type callMeasurement struct {
 	ErrorType    string
 }
 
+// recordCallMeasurement 记录一次调用的时间、Token、成本和错误类型。
+func recordCallMeasurement(ctx context.Context) (callMeasurement, error) {
+	// TODO 1：采集开始、首 Token、结束时间和用量，保留 Case 与模型标识。
+	return callMeasurement{}, errExerciseIncomplete
+}
+
+// validateMeasurements 校验时间顺序、用量和样本数量。
+func validateMeasurements(values []callMeasurement) error {
+	// TODO 2：拒绝时间倒序、负 Token、负成本和空样本。
+	return errExerciseIncomplete
+}
+
 // percentileDuration 计算排序后样本的指定分位数。
 func percentileDuration(samples []time.Duration, percentile float64) (time.Duration, error) {
+	// TODO 3：实现分位数算法，并验证 P50/P95 的边界样本。
 	return 0, errExerciseIncomplete
 }
 
 // summarizeMeasurements 汇总 P50/P95、Token、成本和失败率。
 func summarizeMeasurements(values []callMeasurement) error {
+	// TODO 4：按模型、Prompt 版本和标签汇总延迟、用量和失败率。
+	return errExerciseIncomplete
+}
+
+// reportCostQualityTradeoff 同时展示性能、成本和质量指标。
+func reportCostQualityTradeoff(ctx context.Context) error {
+	// TODO 5：避免只优化成本或延迟而忽略回答质量。
 	return errExerciseIncomplete
 }
 
@@ -36,10 +56,5 @@ func runExercise(ctx context.Context) error {
 		return errors.New("Context 不能为空")
 	}
 
-	// TODO 1：记录开始、首 Token、结束、Token、成本和错误分类。
-	// TODO 2：校验时间顺序、Token 非负和样本数量。
-	// TODO 3：实现 percentileDuration，并用边界样本验证 P50/P95。
-	// TODO 4：实现 summarizeMeasurements，按模型、Prompt 版本和标签汇总。
-	// TODO 5：同时展示质量指标，避免只优化成本或延迟。
-	return errExerciseIncomplete
+	return reportCostQualityTradeoff(ctx)
 }

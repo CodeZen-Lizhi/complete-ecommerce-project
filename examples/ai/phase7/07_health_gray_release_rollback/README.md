@@ -22,6 +22,8 @@
 
 ## 开始练习
 
+先修改 `exercise.go` 顶部的 `releaseControlBaseURL` 和 `releaseControlAPIKey`，并确保地址只指向练习环境。
+
 ```bash
 go run ./examples/ai/phase7/07_health_gray_release_rollback
 ```
@@ -38,7 +40,7 @@ go vet ./examples/ai/phase7/07_health_gray_release_rollback
 
 ## 完成标准
 
-- 从 `RELEASE_CONTROL_BASE_URL` 连接真实练习环境并执行权重调整与回滚；只计算枚举结果不算完成。
+- 使用顶部 `releaseControlBaseURL` 连接真实练习环境并执行权重调整与回滚；只计算枚举结果不算完成。
 
 - 日志、指标和 Trace 不包含 Secret、PII 或高基数敏感标签。
 - 超时、限流、健康和降级状态可以被测试和观察。

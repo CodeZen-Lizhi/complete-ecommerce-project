@@ -28,13 +28,33 @@ type toolExecutor interface {
 	Execute(ctx context.Context, toolName string, argumentsJSON string) (string, error)
 }
 
-// newEinoToolsNode 使用真实 Eino BaseTool 列表创建 ToolsNode；自定义执行器不能替代此步骤。
-func newEinoToolsNode(ctx context.Context, tools []tool.BaseTool) (*compose.ToolsNode, error) {
+// newReadonlyTool 创建用途单一且 Schema 严格的只读工具。
+func newReadonlyTool() (readonlyTool, error) {
+	// TODO 1：定义工具名称、职责、输入字段和必填约束。
 	return nil, errExerciseIncomplete
 }
 
 // validateToolInfo 校验工具名、描述和 JSON Schema。
 func validateToolInfo(info toolInfo) error {
+	// TODO 2：拒绝空名称、模糊描述和非法 JSON Schema。
+	return errExerciseIncomplete
+}
+
+// invokeReadonlyTool 严格解析参数并执行一次无副作用查询。
+func invokeReadonlyTool(ctx context.Context, target readonlyTool, argumentsJSON string) (string, error) {
+	// TODO 3：校验参数、传播 Context 取消，并保证查询无副作用。
+	return "", errExerciseIncomplete
+}
+
+// newEinoToolsNode 使用真实 Eino BaseTool 列表创建 ToolsNode；自定义执行器不能替代此步骤。
+func newEinoToolsNode(ctx context.Context, tools []tool.BaseTool) (*compose.ToolsNode, error) {
+	// TODO 4：通过 compose.NewToolNode 注册真实工具并执行一次 Tool Call。
+	return nil, errExerciseIncomplete
+}
+
+// runReadonlyToolScenario 验证输出边界和错误脱敏。
+func runReadonlyToolScenario(ctx context.Context) error {
+	// TODO 5：限制返回大小，错误不泄露内部数据或敏感字段。
 	return errExerciseIncomplete
 }
 
@@ -44,10 +64,5 @@ func runExercise(ctx context.Context) error {
 		return errors.New("Context 不能为空")
 	}
 
-	// TODO 1：定义一个用途单一的本地只读工具及严格输入 Schema。
-	// TODO 2：实现 validateToolInfo，拒绝空名称、模糊描述和非法 Schema。
-	// TODO 3：实现 readonlyTool.Invoke，严格解析参数并传播 Context 取消。
-	// TODO 4：实现 newEinoToolsNode，通过 compose.NewToolNode 注册真实工具并执行一次 Tool Call。
-	// TODO 5：限制返回大小，错误不泄露内部数据或敏感字段。
-	return errExerciseIncomplete
+	return runReadonlyToolScenario(ctx)
 }

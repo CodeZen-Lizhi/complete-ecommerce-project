@@ -36,8 +36,33 @@ type taskRepository interface {
 	SaveProgress(ctx context.Context, task agentTask) error
 }
 
+// validateTaskTransition 校验任务状态机的合法转换。
+func validateTaskTransition(from taskStatus, to taskStatus) error {
+	// TODO 1：定义 Pending、Running、Succeeded、Failed、Canceled 的合法边。
+	return errExerciseIncomplete
+}
+
+// createIdempotentTask 按幂等键创建或读取任务。
+func createIdempotentTask(ctx context.Context, repository taskRepository, task agentTask) (agentTask, error) {
+	// TODO 2：调用 CreateOrGet，并校验命中任务与输入语义一致。
+	return agentTask{}, errExerciseIncomplete
+}
+
+// claimAgentTask 原子领取任务并设置租约。
+func claimAgentTask(ctx context.Context, repository taskRepository, workerID string, lease time.Duration) (agentTask, error) {
+	// TODO 3：避免多个 Worker 同时领取，并拒绝非法租约。
+	return agentTask{}, errExerciseIncomplete
+}
+
 // runWorker 执行单个任务并在成功、失败或取消时持久化终态。
 func runWorker(ctx context.Context, repository taskRepository, workerID string) error {
+	// TODO 4：保存进度、Checkpoint、错误和取消状态。
+	return errExerciseIncomplete
+}
+
+// verifyTaskRecovery 模拟 Worker 崩溃和租约过期。
+func verifyTaskRecovery(ctx context.Context) error {
+	// TODO 5：确认任务可以重新领取且不会重复执行已完成步骤。
 	return errExerciseIncomplete
 }
 
@@ -47,10 +72,5 @@ func runExercise(ctx context.Context) error {
 		return errors.New("Context 不能为空")
 	}
 
-	// TODO 1：定义任务状态机和合法状态转换。
-	// TODO 2：通过 taskRepository.CreateOrGet 实现创建幂等。
-	// TODO 3：实现 Claim 的原子领取和租约，避免多个 Worker 重复执行。
-	// TODO 4：实现 runWorker，保存进度、Checkpoint、错误和取消状态。
-	// TODO 5：模拟 Worker 崩溃和租约过期，验证任务可被重新领取。
-	return errExerciseIncomplete
+	return verifyTaskRecovery(ctx)
 }

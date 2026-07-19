@@ -7,6 +7,16 @@ import (
 	"strings"
 )
 
+// 外部组件配置集中放在顶部，练习时直接替换占位值。
+const (
+	embeddingBaseURL   = "http://localhost:8084/v1"
+	embeddingAPIKey    = "replace-with-your-api-key"
+	embeddingModelName = "text-embedding-3-small"
+	qdrantBaseURL      = "http://localhost:6333"
+	qdrantAPIKey       = "replace-with-your-qdrant-api-key"
+	qdrantCollection   = "ai_phase3_documents"
+)
+
 var errExerciseIncomplete = errors.New("练习尚未完成，请按 TODO 顺序实现")
 
 type indexedDocument struct {
@@ -28,9 +38,18 @@ type retriever interface {
 }
 
 type qdrantConfig struct {
-	BaseURL    string
-	Collection string
-	APIKey     string
+	BaseURL          string
+	Collection       string
+	APIKey           string
+	EmbeddingBaseURL string
+	EmbeddingAPIKey  string
+	EmbeddingModel   string
+}
+
+// buildIndexDocuments 定义稳定 ID、向量维度和 Metadata 契约。
+func buildIndexDocuments() ([]indexedDocument, error) {
+	// TODO 1：准备带稳定 Document ID、Chunk ID 和权限 Metadata 的文档批次。
+	return nil, errExerciseIncomplete
 }
 
 // newQdrantHTTPClient 校验真实 Qdrant 地址和集合配置，并返回用于 REST API 调用的 Client。
@@ -38,11 +57,25 @@ func newQdrantHTTPClient(config qdrantConfig) (*http.Client, error) {
 	if strings.TrimSpace(config.BaseURL) == "" || strings.TrimSpace(config.Collection) == "" {
 		return nil, errors.New("Qdrant Base URL 和 Collection 不能为空")
 	}
+	// TODO 2：创建真实 Qdrant Client 和集合，再接入 Eino Embedder、Indexer 与 Retriever。
 	return nil, errExerciseIncomplete
 }
 
 // validateIndexBatch 校验 ID、内容、Metadata 和批量上限。
 func validateIndexBatch(documents []indexedDocument) error {
+	// TODO 3：拒绝空 ID、空内容、缺失 Metadata、重复 ID 和超大批次。
+	return errExerciseIncomplete
+}
+
+// retrieveAndValidate 执行检索并校验 Top-K、空结果和返回顺序。
+func retrieveAndValidate(ctx context.Context, retriever retriever, query string, topK int) ([]indexedDocument, error) {
+	// TODO 4：调用 Retrieve，并验证返回数量、顺序和 Context 取消。
+	return nil, errExerciseIncomplete
+}
+
+// verifyIndexLifecycle 验证真实 Qdrant 的写入、查询和删除闭环。
+func verifyIndexLifecycle(ctx context.Context, config qdrantConfig) error {
+	// TODO 5：输出命中文档、分数和 Metadata，并验证 Delete 后不再召回。
 	return errExerciseIncomplete
 }
 
@@ -52,10 +85,12 @@ func runExercise(ctx context.Context) error {
 		return errors.New("Context 不能为空")
 	}
 
-	// TODO 1：定义稳定文档 ID、Chunk ID、向量维度和 Metadata 契约。
-	// TODO 2：从 VECTOR_BASE_URL 创建真实 Qdrant Client 和集合，再接入 Eino Embedder、Indexer 与 Retriever。
-	// TODO 3：实现 validateIndexBatch 后批量写入，区分重复 ID、部分失败和完整失败。
-	// TODO 4：对查询执行 Retrieve，校验 Top-K、空结果和返回顺序。
-	// TODO 5：对真实 Qdrant 输出命中文档、分数和 Metadata，并验证 Delete 后不再召回。
-	return errExerciseIncomplete
+	return verifyIndexLifecycle(ctx, qdrantConfig{
+		BaseURL:          qdrantBaseURL,
+		Collection:       qdrantCollection,
+		APIKey:           qdrantAPIKey,
+		EmbeddingBaseURL: embeddingBaseURL,
+		EmbeddingAPIKey:  embeddingAPIKey,
+		EmbeddingModel:   embeddingModelName,
+	})
 }

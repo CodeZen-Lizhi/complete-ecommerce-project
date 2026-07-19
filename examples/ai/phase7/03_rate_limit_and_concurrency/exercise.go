@@ -23,8 +23,33 @@ type concurrencyLimiter interface {
 	Acquire(ctx context.Context) (release func(), err error)
 }
 
+// buildLimitKey 定义请求、用户、租户和下游资源维度。
+func buildLimitKey(tenantID string, userID string, resource string) (limitKey, error) {
+	// TODO 1：拒绝空租户与资源，并明确匿名用户的稳定 Key。
+	return limitKey{}, errExerciseIncomplete
+}
+
+// waitRateLimit 等待速率许可并响应 Context 取消。
+func waitRateLimit(ctx context.Context, limiter rateLimiter, key limitKey) error {
+	// TODO 2：区分正常许可、排队超时、主动取消和限额拒绝。
+	return errExerciseIncomplete
+}
+
+// acquireConcurrencySlot 获取有界并发许可并返回释放函数。
+func acquireConcurrencySlot(ctx context.Context, limiter concurrencyLimiter) (func(), error) {
+	// TODO 3：保证成功获取后的所有路径只释放一次。
+	return nil, errExerciseIncomplete
+}
+
 // runLimited 在限速和并发上限内执行一次下游调用。
 func runLimited(ctx context.Context, rate rateLimiter, concurrency concurrencyLimiter, key limitKey, call func(context.Context) error) error {
+	// TODO 4：按限速、并发、下游调用顺序组合，并保留原始错误原因。
+	return errExerciseIncomplete
+}
+
+// benchmarkLimitedCalls 压测突发流量并记录关键指标。
+func benchmarkLimitedCalls(ctx context.Context) error {
+	// TODO 5：记录 P95、排队时间和拒绝率，检查并发上限没有泄漏。
 	return errExerciseIncomplete
 }
 
@@ -34,10 +59,5 @@ func runExercise(ctx context.Context) error {
 		return errors.New("Context 不能为空")
 	}
 
-	// TODO 1：定义请求级、用户级、租户级和下游级 limitKey。
-	// TODO 2：实现 rateLimiter，等待许可时响应 Context 取消。
-	// TODO 3：实现 concurrencyLimiter，使用有界许可并保证所有路径释放。
-	// TODO 4：实现 runLimited，区分排队超时、主动取消和限额拒绝。
-	// TODO 5：压测突发流量并记录 P95、排队时间和拒绝率。
-	return errExerciseIncomplete
+	return benchmarkLimitedCalls(ctx)
 }

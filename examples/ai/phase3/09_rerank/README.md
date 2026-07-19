@@ -22,6 +22,8 @@
 
 ## 开始练习
 
+先修改 `exercise.go` 顶部的 `rerankerBaseURL`、`rerankerAPIKey` 和 `rerankerModelName`。
+
 ```bash
 go run ./examples/ai/phase3/09_rerank
 ```

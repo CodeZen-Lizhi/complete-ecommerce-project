@@ -8,19 +8,22 @@
 
 - Eino 组件的 Context 与错误传播。
 - 文档、Chunk、Metadata、向量和 Top-K 的基本含义。
-- 配置使用 `OPENAI_BASE_URL`、`EMBEDDING_MODEL` 和 `OPENAI_API_KEY`；源码不保存真实密钥。
+- 模型连接通过 `exercise.go` 顶部的 `baseURL`、`apiKey` 和 `modelName` 占位常量配置。
 
 ## TODO 顺序
 
 核心接口与函数签名位于 `exercise.go`，`main.go` 只保留安全启动入口。
 
-1. TODO 1：校验文本集合、查询文本、向量维度和 TopK。
-2. TODO 2：创建 Embedder，并分别生成文档向量与查询向量。
-3. TODO 3：实现余弦相似度，处理零向量和维度不一致。
-4. TODO 4：为每个文档计算分数，稳定排序并截取 Top-K。
-5. TODO 5：打印文本、分数、维度和耗时，不输出 API Key。
+1. TODO 1：实现 `parseEmbeddingInput`，校验查询、候选文本和 Top-K。
+2. TODO 2：实现 `loadEmbeddingConfig`，读取并校验模型配置。
+3. TODO 3：实现 `embedInputs`，分别生成候选向量和查询向量。
+4. TODO 4：实现 `cosineSimilarity`，处理零向量和维度不一致。
+5. TODO 5：实现 `rankTopK`，稳定排序并截取 Top-K。
+6. TODO 6：实现 `reportEmbeddingResults`，打印分数、维度和耗时且不输出 API Key。
 
 ## 开始练习
+
+先修改 `exercise.go` 顶部的模型占位常量；本地练习可以填写真实值，但不要提交真实 API Key。
 
 ```bash
 go run ./examples/ai/phase3/01_embedding_similarity \

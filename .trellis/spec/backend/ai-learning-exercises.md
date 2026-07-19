@@ -15,11 +15,13 @@
   - `react.NewAgent` / `*react.Agent`
   - `compose.CheckPointStore` / `compose.ResumeWithData`
 - `runExercise(ctx context.Context) error` 继续作为练习执行入口，未完成时返回 `errExerciseIncomplete`。
+- 编号 TODO 必须贴在学习者实际填写的类型、构造函数、校验函数或调用位置；`runExercise` 只负责按顺序串联步骤，不得集中罗列整组 TODO。
 
 ### 3. Contracts
 
-- 模型配置：示例顶部常量只保存占位 Key；真实 Key 不提交。
-- 基础设施配置：使用 README 明确的环境变量，例如 `VECTOR_BASE_URL`、`MYSQL_DSN`、`RELEASE_CONTROL_BASE_URL`。
+- 模型配置：需要真实模型调用的练习在 `exercise.go` 或 `main.go` 顶部提供 `BaseURL`、占位 `API Key` 和模型名常量，学习者直接修改这些入口；真实 Key 不提交。
+- 基础设施配置：Qdrant、BM25、MySQL、Reranker、发布控制等练习也在顶部提供服务专属占位常量，README 必须列出应修改的常量名。
+- Secret 管理与 Docker Compose 练习是例外：它们的学习目标就是环境变量和 Secret 生命周期，不得把真实密钥改成源码常量。
 - README 必须包含真实运行命令、是否产生模型费用、预期观察项和失败场景。
 - 用户明确要求时，练习保持 TODO 骨架，不直接交付核心答案。
 
@@ -38,10 +40,11 @@
 - Good：骨架保留小接口用于理解边界，同时提供真实 SDK 构造函数 TODO，并要求运行真实组件闭环。
 - Base：目录、README、Go 骨架可编译，未完成时明确返回 `errExerciseIncomplete`。
 - Bad：README 写“Eino 或等价实现”，最终只调用本地 Map、Fake 模型或手写状态机。
+- Bad：多个编号 TODO 连续堆在入口函数里，但对应类型和函数没有可填写位置。
 
 ### 6. Tests Required
 
-- 仓库级 `catalog_test.go` 验证目录、TODO 连续性和真实构造入口符号存在。
+- 仓库级 `catalog_test.go` 验证目录、TODO 连续性、TODO 填写位置、README 一致性、顶部占位配置和真实构造入口符号存在。
 - `go test -timeout=60s ./...` 和 `go vet ./...` 保证骨架基线。
 - 用户要求不新增 `_test.go` 时，真实完成证明来自 README 指定的 `go run`、Compose 或服务调用命令，不用 Fake 结果替代。
 

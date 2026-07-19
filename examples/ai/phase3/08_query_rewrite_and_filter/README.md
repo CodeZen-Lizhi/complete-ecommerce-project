@@ -22,6 +22,8 @@
 
 ## 开始练习
 
+先修改 `exercise.go` 顶部的模型与 Qdrant 占位常量。
+
 ```bash
 go run ./examples/ai/phase3/08_query_rewrite_and_filter
 ```

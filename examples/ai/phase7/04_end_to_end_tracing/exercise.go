@@ -31,11 +31,31 @@ type tracer interface {
 
 // newOpenTelemetryProvider 创建真实 stdout Exporter 和 SDK TracerProvider，调用方负责 Shutdown。
 func newOpenTelemetryProvider(ctx context.Context) (*sdktrace.TracerProvider, *stdouttrace.Exporter, error) {
+	// TODO 1：注册 stdout Exporter 和 SDK TracerProvider，并在入口创建根 Span。
 	return nil, nil, errExerciseIncomplete
 }
 
 // tracePipeline 为模型、Retriever、Rerank、Tool 和 Agent 创建父子 Span。
 func tracePipeline(ctx context.Context, tracer tracer) error {
+	// TODO 2：为模型、Retriever、Rerank、Tool 和 Agent 创建正确的父子 Span。
+	return errExerciseIncomplete
+}
+
+// safeSpanAttributes 生成低敏、低基数的 Span 属性。
+func safeSpanAttributes(modelName string, resultCount int) (spanAttributes, error) {
+	// TODO 3：只记录耗时、状态、模型名和结果数量等低敏属性。
+	return nil, errExerciseIncomplete
+}
+
+// recordSpanFailure 写入错误状态但不泄露敏感内容。
+func recordSpanFailure(target span, cause error) error {
+	// TODO 4：记录错误状态，但不写入 Prompt、Secret 或完整文档。
+	return errExerciseIncomplete
+}
+
+// verifyTraceTree 验证一次请求可以还原完整调用链。
+func verifyTraceTree(ctx context.Context) error {
+	// TODO 5：执行管线并检查父子关系、错误状态和 Provider Shutdown。
 	return errExerciseIncomplete
 }
 
@@ -45,10 +65,5 @@ func runExercise(ctx context.Context) error {
 		return errors.New("Context 不能为空")
 	}
 
-	// TODO 1：实现 newOpenTelemetryProvider，注册真实 Exporter，并在入口通过 otel.Tracer 创建根 Span。
-	// TODO 2：通过真实 OpenTelemetry Tracer 为模型、Retriever、Rerank、Tool 和 Agent 创建父子 Span。
-	// TODO 3：只记录耗时、状态、模型名和结果数量等低敏属性。
-	// TODO 4：错误写入 Span 状态，但不记录 Prompt、Secret 或完整文档。
-	// TODO 5：实现 tracePipeline 测试，验证一次请求能还原完整调用链。
-	return errExerciseIncomplete
+	return verifyTraceTree(ctx)
 }

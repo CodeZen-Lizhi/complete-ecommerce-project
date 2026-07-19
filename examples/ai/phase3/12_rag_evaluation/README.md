@@ -14,11 +14,12 @@
 
 核心接口与函数签名位于 `exercise.go`，`main.go` 只保留安全启动入口。
 
-1. TODO 1：定义问题、相关 Chunk ID、期望事实和过滤条件。
-2. TODO 2：运行不同检索配置并保存原始排名。
-3. TODO 3：实现 Recall@K、MRR 和命中率计算。
-4. TODO 4：记录 P50/P95、Embedding/Rerank 调用量和成本。
-5. TODO 5：输出可重复报告，并在结果缺失时失败而不是跳过。
+1. TODO 1：实现 `loadRAGEvaluationCases`，加载问题、相关 Chunk ID 和过滤条件。
+2. TODO 2：实现 `loadRAGEvaluationRuns`，保存不同配置的原始排名。
+3. TODO 3：实现 `recallAtK`。
+4. TODO 4：实现 `reciprocalRank`。
+5. TODO 5：实现 `summarizeRAGEvaluation`，汇总延迟、调用量和成本。
+6. TODO 6：实现 `reportRAGEvaluationFailures`，结果缺失时明确失败。
 
 ## 开始练习
 

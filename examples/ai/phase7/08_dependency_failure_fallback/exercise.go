@@ -27,8 +27,21 @@ type fallbackDecision struct {
 	Reason  string
 }
 
+// defineFallbackBoundaries 列出可降级和不可降级请求。
+func defineFallbackBoundaries() ([]fallbackRequest, error) {
+	// TODO 1：写操作和无法标记能力限制的请求禁止假成功。
+	return nil, errExerciseIncomplete
+}
+
+// injectDependencyFailure 注入模型和向量库故障。
+func injectDependencyFailure(ctx context.Context, failure dependencyFailure) error {
+	// TODO 2：覆盖模型超时、429、5xx 和向量库连接失败。
+	return errExerciseIncomplete
+}
+
 // decideFallback 根据失败类型和请求副作用边界决定是否降级。
 func decideFallback(failure dependencyFailure, request fallbackRequest) (fallbackDecision, error) {
+	// TODO 3：只允许安全只读请求使用缓存或备用模型。
 	return fallbackDecision{}, errExerciseIncomplete
 }
 
@@ -42,16 +55,23 @@ type recoveryController interface {
 	Exit(ctx context.Context) error
 }
 
+// controlDependencyRecovery 限制恢复探测并安全退出降级。
+func controlDependencyRecovery(ctx context.Context, controller recoveryController, failure dependencyFailure) error {
+	// TODO 4：限制 Probe 频率，避免并发探测和重试风暴。
+	return errExerciseIncomplete
+}
+
+// verifyFallbackLifecycle 验证降级标记和自动恢复。
+func verifyFallbackLifecycle(ctx context.Context) error {
+	// TODO 5：响应必须标记能力限制，依赖恢复后自动退出降级。
+	return errExerciseIncomplete
+}
+
 // runExercise 按执行顺序组织“依赖故障与降级”练习的核心步骤。
 func runExercise(ctx context.Context) error {
 	if ctx == nil {
 		return errors.New("Context 不能为空")
 	}
 
-	// TODO 1：定义可降级和不可降级场景，写操作禁止假成功。
-	// TODO 2：注入模型超时、429、5xx 和向量库连接失败。
-	// TODO 3：实现 decideFallback，只允许安全只读请求使用缓存或备用模型。
-	// TODO 4：使用 recoveryController 限制恢复探测频率，避免重试风暴。
-	// TODO 5：验证降级响应标记能力限制，依赖恢复后自动退出。
-	return errExerciseIncomplete
+	return verifyFallbackLifecycle(ctx)
 }

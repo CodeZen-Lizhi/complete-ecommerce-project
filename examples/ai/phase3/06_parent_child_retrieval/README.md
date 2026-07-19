@@ -22,6 +22,8 @@
 
 ## 开始练习
 
+先修改 `exercise.go` 顶部的 `qdrantBaseURL`、`qdrantAPIKey` 和 `qdrantCollection`。
+
 ```bash
 go run ./examples/ai/phase3/06_parent_child_retrieval
 ```

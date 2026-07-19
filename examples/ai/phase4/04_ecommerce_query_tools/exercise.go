@@ -7,6 +7,7 @@ import (
 
 var errExerciseIncomplete = errors.New("练习尚未完成，请按 TODO 顺序实现")
 
+// TODO 1：保持商品、库存、订单和物流接口狭窄，只返回只读 DTO。
 type productView struct {
 	ID    string
 	Name  string
@@ -30,9 +31,28 @@ type orderQueryService interface {
 	GetOrder(ctx context.Context, userID string, orderID string) (orderView, error)
 }
 
+// validateBusinessQuery 校验资源 ID、分页和返回大小。
+func validateBusinessQuery(resourceID string, limit int) error {
+	// TODO 2：拒绝空 ID、非法分页和超大返回，并禁止 Tool 直接访问 GORM。
+	return errExerciseIncomplete
+}
+
+// queryProductTool 使用注入的 Service 查询有限商品字段。
+func queryProductTool(ctx context.Context, service productQueryService, productID string) (productView, error) {
+	// TODO 3：注入确定性 Fake Service，完成只读商品查询和错误传播。
+	return productView{}, errExerciseIncomplete
+}
+
 // queryOrderTool 在可信身份边界内执行订单查询。
 func queryOrderTool(ctx context.Context, service orderQueryService, orderID string) (orderView, error) {
+	// TODO 4：从 Context 获取可信用户，并校验订单归属。
 	return orderView{}, errExerciseIncomplete
+}
+
+// verifyBusinessQueryFailures 覆盖查询工具失败边界。
+func verifyBusinessQueryFailures(ctx context.Context) error {
+	// TODO 5：覆盖 NotFound、跨用户、依赖错误和超大返回场景。
+	return errExerciseIncomplete
 }
 
 // runExercise 按执行顺序组织“电商业务查询工具”练习的核心步骤。
@@ -41,10 +61,5 @@ func runExercise(ctx context.Context) error {
 		return errors.New("Context 不能为空")
 	}
 
-	// TODO 1：为商品、库存、订单和物流定义窄查询接口和只读 DTO。
-	// TODO 2：校验 ID、分页和返回大小，禁止 Tool 直接访问 GORM。
-	// TODO 3：注入 Fake Service，实现商品只读查询工具。
-	// TODO 4：实现 queryOrderTool，从 Context 获取可信用户并校验订单归属。
-	// TODO 5：覆盖 NotFound、跨用户、依赖错误和超大返回场景。
-	return errExerciseIncomplete
+	return verifyBusinessQueryFailures(ctx)
 }

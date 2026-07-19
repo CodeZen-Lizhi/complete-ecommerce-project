@@ -22,6 +22,8 @@
 
 ## 开始练习
 
+先修改 `exercise.go` 顶部的 `mysqlDSN` 与 Qdrant 占位常量。
+
 ```bash
 go run ./examples/ai/phase3/11_index_lifecycle
 ```
@@ -38,7 +40,7 @@ go vet ./examples/ai/phase3/11_index_lifecycle
 
 ## 完成标准
 
-- 从 `MYSQL_DSN` 连接真实 MySQL 保存导入状态，并与真实向量索引执行更新、删除、失败重试和补偿；内存 Store 不算完成。
+- 使用顶部 `mysqlDSN` 常量连接真实 MySQL 保存导入状态，并与真实向量索引执行更新、删除、失败重试和补偿；内存 Store 不算完成。
 
 - 输入、空结果、维度、Top-K、权限和取消边界得到明确处理。
 - 外部依赖错误使用 `%w` 保留原因，不吞掉部分失败。

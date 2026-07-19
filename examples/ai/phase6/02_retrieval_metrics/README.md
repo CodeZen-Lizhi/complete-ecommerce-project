@@ -14,11 +14,12 @@
 
 核心接口与函数签名位于 `exercise.go`，`main.go` 只保留安全启动入口。
 
-1. TODO 1：读取 Golden Dataset 与每个查询的排名结果。
-2. TODO 2：校验 K、相关文档集合和重复结果。
-3. TODO 3：实现 Recall@K、MRR 和 Hit Rate。
-4. TODO 4：分别汇总总体与标签分组指标。
-5. TODO 5：输出失败 case 和排名证据，避免只给平均数。
+1. TODO 1：实现 `loadRetrievalEvaluation`，读取 Golden Dataset 和原始排名。
+2. TODO 2：实现 `validateRetrievalInputs`，校验 K、相关集合和重复结果。
+3. TODO 3：实现 `recallAtK`。
+4. TODO 4：实现 `reciprocalRank`。
+5. TODO 5：实现 `summarizeRetrieval`，汇总总体与标签分组指标。
+6. TODO 6：实现 `reportRetrievalFailures`，输出失败 Case 和排名证据。
 
 ## 开始练习
 

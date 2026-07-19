@@ -45,6 +45,7 @@ func TestValidateModelConfig(t *testing.T) {
 }
 
 // TestBuildResponseFormat 验证 Prompt 模式与原生 JSON Schema 模式使用不同的模型参数。
+// TODO 13：在本文件离线覆盖两种模式、未知字段、多个 JSON、缺失字段、空数组和范围错误。
 func TestBuildResponseFormat(t *testing.T) {
 	t.Run("Prompt 模式不传 ResponseFormat", func(t *testing.T) {
 		format, err := buildResponseFormat(promptOnlyMode)

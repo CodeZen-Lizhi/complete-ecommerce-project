@@ -22,6 +22,8 @@
 
 ## 开始练习
 
+先修改 `exercise.go` 顶部的 Embedding、Qdrant 和 BM25 占位常量。
+
 ```bash
 go run ./examples/ai/phase3/07_hybrid_search_rrf
 ```

@@ -23,16 +23,31 @@ type identityContextKey struct{}
 
 // withIdentity 把可信身份写入新的 Context。
 func withIdentity(ctx context.Context, value identity) (context.Context, error) {
+	// TODO 1：只接受可信认证边界提供的身份，并校验空用户与租户。
 	return nil, errExerciseIncomplete
 }
 
 // identityFromContext 读取可信身份；缺失或无效身份明确失败。
 func identityFromContext(ctx context.Context) (identity, error) {
+	// TODO 2：读取可信身份，不接受模型参数里的 User ID 作为替代。
 	return identity{}, errExerciseIncomplete
 }
 
 // authorizeResource 校验租户、资源归属和动作权限。
 func authorizeResource(value identity, target resource, action string) error {
+	// TODO 3：先校验租户，再校验资源归属和角色动作白名单。
+	return errExerciseIncomplete
+}
+
+// classifyAuthorizationFailure 区分认证、授权和资源隐藏错误。
+func classifyAuthorizationFailure(err error) (string, error) {
+	// TODO 4：避免通过错误信息泄露跨租户资源是否存在。
+	return "", errExerciseIncomplete
+}
+
+// recordAuthorizationAudit 记录最小授权审计字段。
+func recordAuthorizationAudit(ctx context.Context, value identity, target resource, action string) error {
+	// TODO 5：不得记录 Token、Cookie 或完整工具参数。
 	return errExerciseIncomplete
 }
 
@@ -42,10 +57,5 @@ func runExercise(ctx context.Context) error {
 		return errors.New("Context 不能为空")
 	}
 
-	// TODO 1：定义可信 identity 的来源，并实现 withIdentity 的空值校验。
-	// TODO 2：实现 identityFromContext，不接受模型参数中的 user ID 作为可信身份。
-	// TODO 3：实现 authorizeResource，先校验租户，再校验资源归属和角色动作。
-	// TODO 4：区分未认证、无权限和资源不存在，避免泄露跨租户资源。
-	// TODO 5：记录最小审计字段，不记录 Token、Cookie 或完整工具参数。
-	return errExerciseIncomplete
+	return recordAuthorizationAudit(ctx, identity{}, resource{}, "")
 }

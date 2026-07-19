@@ -22,6 +22,8 @@
 
 ## 开始练习
 
+先修改 `exercise.go` 顶部的 `baseURL`、`apiKey` 和 `modelName`。
+
 ```bash
 go run ./examples/ai/phase5/01_chain_workflow
 ```

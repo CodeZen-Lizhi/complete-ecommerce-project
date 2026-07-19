@@ -29,8 +29,33 @@ type idempotencyRecordStore interface {
 	SaveResult(ctx context.Context, key string, result string) error
 }
 
+// listRecoveryBatch 有界扫描可恢复任务。
+func listRecoveryBatch(ctx context.Context, store recoveryStore, limit int) ([]recoveryTask, error) {
+	// TODO 1：调用 ListRecoverable，并拒绝非正或过大的扫描上限。
+	return nil, errExerciseIncomplete
+}
+
+// restoreRecoveryTask 从最近 Checkpoint 重建任务状态。
+func restoreRecoveryTask(ctx context.Context, store recoveryStore, task recoveryTask) error {
+	// TODO 2：损坏或缺失 Checkpoint 必须明确失败。
+	return errExerciseIncomplete
+}
+
+// buildSideEffectKey 为副作用生成稳定幂等键。
+func buildSideEffectKey(task recoveryTask, operation string) (string, error) {
+	// TODO 3：组合任务、步骤和操作标识，并拒绝空字段。
+	return "", errExerciseIncomplete
+}
+
 // recoverTasks 有界恢复任务，并在副作用前查询幂等记录。
 func recoverTasks(ctx context.Context, tasks recoveryStore, records idempotencyRecordStore, limit int) error {
+	// TODO 4：已成功副作用直接复用记录，未命中时执行并原子保存结果。
+	return errExerciseIncomplete
+}
+
+// verifyRecoveryCrashPoints 在多个崩溃点验证恢复幂等性。
+func verifyRecoveryCrashPoints(ctx context.Context) error {
+	// TODO 5：确认重启恢复不会重复执行任何已完成副作用。
 	return errExerciseIncomplete
 }
 
@@ -40,10 +65,5 @@ func runExercise(ctx context.Context) error {
 		return errors.New("Context 不能为空")
 	}
 
-	// TODO 1：启动时通过 recoveryStore 有界扫描可恢复任务。
-	// TODO 2：从最近 Checkpoint 重建状态，损坏或缺失 Checkpoint 明确失败。
-	// TODO 3：为每个副作用生成稳定幂等键并先查询 idempotencyRecordStore。
-	// TODO 4：实现 recoverTasks，已成功副作用直接复用记录。
-	// TODO 5：在多个崩溃点测试恢复，确认不会重复执行副作用。
-	return errExerciseIncomplete
+	return verifyRecoveryCrashPoints(ctx)
 }

@@ -33,13 +33,33 @@ type confirmation struct {
 	Approved   bool
 }
 
+// newPendingCheckpoint 创建高风险动作的待确认状态。
+func newPendingCheckpoint(taskID string, action string, expiresAt time.Time) (checkpoint, error) {
+	// TODO 1：填写 PendingAction 摘要、初始版本、过期时间和状态。
+	return checkpoint{}, errExerciseIncomplete
+}
+
 // compileInterruptibleGraph 使用真实 CheckPointStore 和中断节点配置编译 Eino Graph。
 func compileInterruptibleGraph(ctx context.Context, store compose.CheckPointStore, interruptNode string) (compose.Runnable[string, string], error) {
+	// TODO 2：通过 WithCheckPointStore 和 WithInterruptBeforeNodes 编译真实 Graph。
 	return nil, errExerciseIncomplete
+}
+
+// invokeUntilInterrupt 首次调用 Graph 并保存中断状态。
+func invokeUntilInterrupt(ctx context.Context, graph compose.Runnable[string, string], checkpointID string) error {
+	// TODO 3：通过 WithCheckPointID 调用 Graph，返回确认标识并校验版本和过期时间。
+	return errExerciseIncomplete
 }
 
 // resumeFromCheckpoint 校验确认人与状态版本后幂等恢复。
 func resumeFromCheckpoint(ctx context.Context, store checkpointStore, input confirmation) error {
+	// TODO 4：让拒绝、过期、版本冲突和重复确认都保持幂等。
+	return errExerciseIncomplete
+}
+
+// resumeEinoGraph 使用同一 Checkpoint ID 恢复真实 Eino Graph。
+func resumeEinoGraph(ctx context.Context) error {
+	// TODO 5：通过 compose.Resume 或 ResumeWithData 恢复，并观察进程重启后的路径。
 	return errExerciseIncomplete
 }
 
@@ -49,10 +69,5 @@ func runExercise(ctx context.Context) error {
 		return errors.New("Context 不能为空")
 	}
 
-	// TODO 1：定义高风险节点、PendingAction 摘要和 Checkpoint 版本。
-	// TODO 2：实现 compileInterruptibleGraph，通过 compose.WithCheckPointStore 和 WithInterruptBeforeNodes 编译真实 Graph。
-	// TODO 3：首次 Invoke 使用 compose.WithCheckPointID 保存中断状态，返回确认标识并校验确认人、版本和过期时间。
-	// TODO 4：实现 resumeFromCheckpoint，拒绝、过期和重复确认均幂等。
-	// TODO 5：使用相同 CheckPoint ID，并通过 compose.Resume 或 ResumeWithData 构造恢复 Context，观察进程重启、版本冲突和确认后路径。
-	return errExerciseIncomplete
+	return resumeEinoGraph(ctx)
 }
