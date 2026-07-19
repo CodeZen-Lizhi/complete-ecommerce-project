@@ -3,6 +3,10 @@ package main
 import (
 	"context"
 	"errors"
+	"strings"
+
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 )
 
 var errExerciseIncomplete = errors.New("练习尚未完成，请按 TODO 顺序实现")
@@ -31,6 +35,14 @@ type vectorIndex interface {
 	DeleteVersion(ctx context.Context, indexID string) error
 }
 
+// newMySQLStateDB 使用练习专用 DSN 创建真实 GORM/MySQL 连接；调用方负责关闭底层连接池。
+func newMySQLStateDB(dsn string) (*gorm.DB, error) {
+	if strings.TrimSpace(dsn) == "" {
+		return nil, errors.New("MYSQL_DSN 不能为空")
+	}
+	return gorm.Open(mysql.Open(dsn), &gorm.Config{})
+}
+
 // runImport 执行可恢复的版本化导入，不在索引成功前暴露新版本。
 func runImport(ctx context.Context, states documentStateStore, index vectorIndex, version documentVersion) error {
 	return errExerciseIncomplete
@@ -43,7 +55,7 @@ func runExercise(ctx context.Context) error {
 	}
 
 	// TODO 1：定义状态机、内容哈希、版本号和幂等键契约。
-	// TODO 2：通过 documentStateStore 创建或恢复导入任务。
+	// TODO 2：从 MYSQL_DSN 创建真实 MySQL 状态存储，通过 documentStateStore 创建或恢复导入任务。
 	// TODO 3：使用 vectorIndex 写入隔离版本，失败时记录步骤和原因。
 	// TODO 4：索引全部成功后再原子 MarkAvailable，旧版本延迟清理。
 	// TODO 5：实现更新、删除、重试和补偿测试，验证中断后可恢复。

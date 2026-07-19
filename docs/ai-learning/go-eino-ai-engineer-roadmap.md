@@ -98,20 +98,21 @@ Go 后端基础
 1. 配置 Base URL、API Key、模型名，完成一次基础模型调用。
 2. 使用 Eino ChatModel `Generate` 完成相同调用。
 3. 加入 System 角色和 User Prompt，观察角色变化。
-4. 使用消息列表完成程序内多轮对话。
-5. 使用 Redis 按 session 保存历史，下一轮重新组装 Messages。
-6. 限制历史轮数或 Token，处理会话过期和用户隔离。
-7. 使用 Eino ChatTemplate 管理 Prompt 和变量。
-8. 使用 ChatModel `Stream`，处理 EOF、取消和中途错误。
-9. 要求模型返回固定 JSON，并完成解析和字段校验。
-10. 增加 Context 超时、有限重试、限流和调用统计。
-11. 使用项目自定义接口隔离具体模型厂商，支持配置切换。
+4. 使用真实 User/Assistant 示例对比 Zero-shot 与 Few-shot，保持最终问题和模型参数一致。
+5. 使用消息列表完成程序内多轮对话。
+6. 使用 Redis 按 session 保存历史，下一轮重新组装 Messages。
+7. 限制历史轮数或 Token，处理会话过期和用户隔离。
+8. 使用 Eino ChatTemplate 管理 Prompt 和变量。
+9. 使用 ChatModel `Stream`，处理 EOF、取消和中途错误。
+10. 先用 Prompt 要求模型返回固定 JSON，再使用原生 JSON Schema Structured Outputs，并比较两种模式的解析、字段校验和失败边界。
+11. 增加 Context 超时、有限重试、限流和调用统计。
+12. 使用项目自定义接口隔离具体模型厂商，支持配置切换。
 
 ## 完成标志
 
 - 能实现普通调用、流式调用和 Redis 多轮对话。
 - 能解释模型无状态、上下文截断和重试边界。
-- 能使用 ChatTemplate、结构化输出和模型适配层。
+- 能解释 Zero-shot/Few-shot 的变量控制，并使用 ChatTemplate、结构化输出和模型适配层。
 - 能记录并控制延迟、Token 和成本。
 
 ---

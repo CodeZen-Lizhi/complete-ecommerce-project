@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"errors"
+
+	"github.com/cloudwego/eino/compose"
 )
 
 var errExerciseIncomplete = errors.New("练习尚未完成，请按 TODO 顺序实现")
@@ -20,13 +22,8 @@ type chainNode[I any, O any] interface {
 	Invoke(ctx context.Context, input I) (O, error)
 }
 
-type compiledChain interface {
-	// Invoke 执行已经编译的固定顺序工作流。
-	Invoke(ctx context.Context, input chainInput) (chainOutput, error)
-}
-
 // buildChain 按规范化、Prompt、模型、解析的顺序构建并编译 Chain。
-func buildChain(ctx context.Context) (compiledChain, error) {
+func buildChain(ctx context.Context) (compose.Runnable[chainInput, chainOutput], error) {
 	return nil, errExerciseIncomplete
 }
 
@@ -37,8 +34,8 @@ func runExercise(ctx context.Context) error {
 	}
 
 	// TODO 1：定义每个节点的输入输出类型和唯一职责。
-	// TODO 2：使用 Eino Chain 按规范化、Prompt、模型调用和解析顺序组装节点。
-	// TODO 3：编译 Chain，并让节点错误和 Context 取消完整传播。
+	// TODO 2：使用 compose.NewChain 按规范化、Prompt、模型调用和解析顺序注册真实节点。
+	// TODO 3：调用 Chain.Compile 得到 compose.Runnable，并让节点错误和 Context 取消完整传播。
 	// TODO 4：使用固定输入调用 compiledChain.Invoke。
 	// TODO 5：记录节点耗时，覆盖空输入和任一中间节点失败。
 	return errExerciseIncomplete

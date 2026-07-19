@@ -38,6 +38,8 @@ go vet ./examples/ai/phase3/07_hybrid_search_rrf
 
 ## 完成标准
 
+- Dense 结果来自真实 Qdrant，Sparse 结果来自真实 BM25 检索组件，再由应用执行 RRF；两份手写排名列表不算完成。
+
 - 输入、空结果、维度、Top-K、权限和取消边界得到明确处理。
 - 外部依赖错误使用 `%w` 保留原因，不吞掉部分失败。
 - 结果可由固定 fixture 重复验证，并记录必要质量或延迟指标。

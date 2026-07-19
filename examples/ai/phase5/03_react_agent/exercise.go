@@ -3,6 +3,11 @@ package main
 import (
 	"context"
 	"errors"
+
+	"github.com/cloudwego/eino/components/model"
+	"github.com/cloudwego/eino/components/tool"
+	"github.com/cloudwego/eino/compose"
+	"github.com/cloudwego/eino/flow/agent/react"
 )
 
 var errExerciseIncomplete = errors.New("练习尚未完成，请按 TODO 顺序实现")
@@ -28,6 +33,12 @@ type reactToolsNode interface {
 	Execute(ctx context.Context, calls []agentToolCall) ([]agentToolResult, error)
 }
 
+// newEinoReActAgent 使用真实 ToolCallingChatModel 和 ToolsNodeConfig 创建 Eino ReAct Agent。
+func newEinoReActAgent(ctx context.Context, chatModel model.ToolCallingChatModel, tools []tool.BaseTool, maxSteps int) (*react.Agent, error) {
+	_ = compose.ToolsNodeConfig{Tools: tools}
+	return nil, errExerciseIncomplete
+}
+
 // runReAct 执行有最大步骤限制的模型-工具循环。
 func runReAct(ctx context.Context, model reactModel, tools reactToolsNode, maxSteps int) (string, error) {
 	return "", errExerciseIncomplete
@@ -40,7 +51,7 @@ func runExercise(ctx context.Context) error {
 	}
 
 	// TODO 1：准备只读工具及严格 Schema，并以不可变方式绑定到模型。
-	// TODO 2：创建 Eino ReAct Agent 或等价 reactModel/reactToolsNode 边界。
+	// TODO 2：实现 newEinoReActAgent，通过 react.NewAgent 和 compose.ToolsNodeConfig 创建真实 Agent。
 	// TODO 3：实现 runReAct，关联 Tool Call ID 和 Tool Result。
 	// TODO 4：处理模型直接回答、单次调用、连续调用和工具失败。
 	// TODO 5：设置最大步骤并检测重复调用，超限返回可诊断错误。

@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 	"errors"
+
+	"github.com/cloudwego/eino/components/tool"
+	"github.com/cloudwego/eino/compose"
 )
 
 var errExerciseIncomplete = errors.New("练习尚未完成，请按 TODO 顺序实现")
@@ -25,6 +28,11 @@ type toolExecutor interface {
 	Execute(ctx context.Context, toolName string, argumentsJSON string) (string, error)
 }
 
+// newEinoToolsNode 使用真实 Eino BaseTool 列表创建 ToolsNode；自定义执行器不能替代此步骤。
+func newEinoToolsNode(ctx context.Context, tools []tool.BaseTool) (*compose.ToolsNode, error) {
+	return nil, errExerciseIncomplete
+}
+
 // validateToolInfo 校验工具名、描述和 JSON Schema。
 func validateToolInfo(info toolInfo) error {
 	return errExerciseIncomplete
@@ -39,7 +47,7 @@ func runExercise(ctx context.Context) error {
 	// TODO 1：定义一个用途单一的本地只读工具及严格输入 Schema。
 	// TODO 2：实现 validateToolInfo，拒绝空名称、模糊描述和非法 Schema。
 	// TODO 3：实现 readonlyTool.Invoke，严格解析参数并传播 Context 取消。
-	// TODO 4：把工具注册到 Eino ToolsNode 或等价 toolExecutor，并执行一次调用。
+	// TODO 4：实现 newEinoToolsNode，通过 compose.NewToolNode 注册真实工具并执行一次 Tool Call。
 	// TODO 5：限制返回大小，错误不泄露内部数据或敏感字段。
 	return errExerciseIncomplete
 }

@@ -38,6 +38,8 @@ go vet ./examples/ai/phase3/04_vector_index_and_retrieval
 
 ## 完成标准
 
+- 从 `VECTOR_BASE_URL` 连接阶段 7 Compose 中的真实 Qdrant，完成建集合、写入、查询和删除；内存 Map 不算完成。
+
 - 输入、空结果、维度、Top-K、权限和取消边界得到明确处理。
 - 外部依赖错误使用 `%w` 保留原因，不吞掉部分失败。
 - 结果可由固定 fixture 重复验证，并记录必要质量或延迟指标。

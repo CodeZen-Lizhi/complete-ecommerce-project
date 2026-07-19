@@ -1,4 +1,4 @@
-# 阶段 2 练习 7：Eino ChatTemplate 与变量
+# 阶段 2 练习 8：Eino ChatTemplate 与变量
 
 ## 练习目标
 
@@ -15,7 +15,7 @@
 ## 开始练习
 
 ```bash
-go run ./examples/ai/phase2/07_chat_template
+go run ./examples/ai/phase2/08_chat_template
 ```
 
 程序只在本地渲染 System 和 User Message，不连接模型服务，也不需要 API Key。
@@ -23,9 +23,9 @@ go run ./examples/ai/phase2/07_chat_template
 ## 验证方式
 
 ```bash
-gofmt -w examples/ai/phase2/07_chat_template/*.go
-go test -timeout=60s ./examples/ai/phase2/07_chat_template
-go vet ./examples/ai/phase2/07_chat_template
+gofmt -w examples/ai/phase2/08_chat_template/*.go
+go test -timeout=60s ./examples/ai/phase2/08_chat_template
+go vet ./examples/ai/phase2/08_chat_template
 ```
 
 ## 完成标准

@@ -38,6 +38,7 @@ main.go
 | [错误处理](./error-handling.md) | 错误包装、分类、响应映射、Panic 恢复 |
 | [日志](./logging-guidelines.md) | `slog`、请求日志、字段与敏感信息 |
 | [质量](./quality-guidelines.md) | 格式化、测试、验证、Review 门禁 |
+| [AI 学习练习](./ai-learning-exercises.md) | 真实组件 TODO 骨架、配置与完成标准 |
 
 ## 交付前质量检查
 

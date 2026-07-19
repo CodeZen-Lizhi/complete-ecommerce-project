@@ -15,8 +15,8 @@
 核心接口与函数签名位于 `exercise.go`，`main.go` 只保留安全启动入口。
 
 1. TODO 1：准备只读工具及严格 Schema。
-2. TODO 2：以不可变方式为模型配置工具。
-3. TODO 3：创建 ReAct Agent 或等价循环。
+2. TODO 2：以不可变方式为真实 `model.ToolCallingChatModel` 配置 `compose.ToolsNodeConfig`。
+3. TODO 3：通过 `react.NewAgent` 创建真实 Eino ReAct Agent。
 4. TODO 4：关联 Tool Call 与 Tool Result，并把结果送回模型。
 5. TODO 5：设置最大步骤并验证不调用、单次调用和多次调用。
 
@@ -37,6 +37,8 @@ go vet ./examples/ai/phase5/03_react_agent
 ```
 
 ## 完成标准
+
+- 实际运行 `*react.Agent`；只实现本地 `reactModel/reactToolsNode` 循环不算完成。
 
 - 每条路径都有最大步骤、预算和终止条件。
 - 状态可序列化、错误可诊断，取消不会被吞掉。

@@ -1,4 +1,4 @@
-# 阶段 2 练习 6：会话历史截断、过期与用户隔离
+# 阶段 2 练习 7：会话历史截断、过期与用户隔离
 
 上一练习已经把完整消息历史保存到 Redis。本练习继续解决三个生产环境一定会遇到的问题：历史不能无限增长、长期不用的会话需要过期、同名 session 不能让不同用户互相读取。
 
@@ -52,7 +52,7 @@ System -> 最近 N 轮 User/Assistant -> 当前 User
 2. 不设置 `OPENAI_API_KEY`，先验证缺少配置时会安全退出：
 
    ```bash
-   env -u OPENAI_API_KEY go run ./examples/ai/phase2/06_session_history_limits
+   env -u OPENAI_API_KEY go run ./examples/ai/phase2/07_session_history_limits
    ```
 
    此时应只提示 `API Key 未配置`，不会连接 Redis，也不会调用模型。
@@ -67,7 +67,7 @@ System -> 最近 N 轮 User/Assistant -> 当前 User
 5. 运行：
 
    ```bash
-   go run ./examples/ai/phase2/06_session_history_limits
+   go run ./examples/ai/phase2/07_session_history_limits
    ```
 
 ## 如何验证三个目标
@@ -106,9 +106,9 @@ ai:phase2:user-session:user-2002:checkout-help
 ## 完成后检查
 
 ```bash
-gofmt -w examples/ai/phase2/06_session_history_limits/main.go
-go test -timeout=60s ./examples/ai/phase2/06_session_history_limits
-go vet ./examples/ai/phase2/06_session_history_limits
+gofmt -w examples/ai/phase2/07_session_history_limits/main.go
+go test -timeout=60s ./examples/ai/phase2/07_session_history_limits
+go vet ./examples/ai/phase2/07_session_history_limits
 ```
 
 ## 完成标准

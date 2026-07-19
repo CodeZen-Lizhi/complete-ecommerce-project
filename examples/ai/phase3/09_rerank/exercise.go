@@ -23,6 +23,17 @@ type reranker interface {
 	Rerank(ctx context.Context, query string, candidates []rerankCandidate) ([]rerankResult, error)
 }
 
+type rerankerConfig struct {
+	BaseURL string
+	Model   string
+	APIKey  string
+}
+
+// newRemoteReranker 从配置创建真实远程 Reranker Adapter。
+func newRemoteReranker(ctx context.Context, config rerankerConfig) (reranker, error) {
+	return nil, errExerciseIncomplete
+}
+
 // validateRerankResults 校验返回 ID、数量、重复项和分数范围。
 func validateRerankResults(candidates []rerankCandidate, results []rerankResult) error {
 	return errExerciseIncomplete
@@ -35,7 +46,7 @@ func runExercise(ctx context.Context) error {
 	}
 
 	// TODO 1：限制候选数量、单段长度和总输入大小。
-	// TODO 2：通过 reranker 构造 Query-Document 对并执行重排。
+	// TODO 2：实现 newRemoteReranker，构造 Query-Document 对并调用真实 Reranker 服务。
 	// TODO 3：实现 validateRerankResults，拒绝未知 ID、重复 ID 和非法分数。
 	// TODO 4：按重排分数稳定排序，明确未返回候选的处理策略。
 	// TODO 5：记录 MRR/Recall 变化、额外 P95 和 Reranker 失败策略。

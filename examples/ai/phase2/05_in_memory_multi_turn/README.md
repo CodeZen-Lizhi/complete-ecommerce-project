@@ -1,4 +1,4 @@
-# 阶段 2 练习 4：程序内多轮对话
+# 阶段 2 练习 5：程序内多轮对话
 
 ## 练习目标
 
@@ -15,7 +15,7 @@
 ## 开始练习
 
 ```bash
-go run ./examples/ai/phase2/04_in_memory_multi_turn
+go run ./examples/ai/phase2/05_in_memory_multi_turn
 ```
 
 默认 API Key 或外部服务配置保持占位符时，程序应明确提示配置未完成，不得连接外部服务或产生付费请求。
@@ -23,9 +23,9 @@ go run ./examples/ai/phase2/04_in_memory_multi_turn
 ## 验证方式
 
 ```bash
-gofmt -w examples/ai/phase2/04_in_memory_multi_turn/*.go
-go test -timeout=60s ./examples/ai/phase2/04_in_memory_multi_turn
-go vet ./examples/ai/phase2/04_in_memory_multi_turn
+gofmt -w examples/ai/phase2/05_in_memory_multi_turn/*.go
+go test -timeout=60s ./examples/ai/phase2/05_in_memory_multi_turn
+go vet ./examples/ai/phase2/05_in_memory_multi_turn
 ```
 
 ## 完成标准

@@ -15,8 +15,8 @@
 核心接口与函数签名位于 `exercise.go`，`main.go` 只保留安全启动入口。
 
 1. TODO 1：定义高风险节点和中断原因。
-2. TODO 2：中断前保存版本化 Checkpoint 与待确认动作摘要。
-3. TODO 3：返回确认标识，不在中断阶段执行副作用。
+2. TODO 2：使用 `compose.WithCheckPointStore` 和 `compose.WithInterruptBeforeNodes` 编译真实可中断 Graph。
+3. TODO 3：首次调用携带 `compose.WithCheckPointID`，保存 Checkpoint 并返回确认标识，不提前执行副作用。
 4. TODO 4：恢复时校验确认人、状态版本和过期时间。
 5. TODO 5：保证 Resume 幂等，并覆盖拒绝、过期和重复确认。
 
@@ -37,6 +37,8 @@ go vet ./examples/ai/phase5/06_interrupt_checkpoint_resume
 ```
 
 ## 完成标准
+
+- 必须真实触发 Eino Interrupt 并从同一 CheckPoint ID 恢复；只调用自定义 Store 不算完成。
 
 - 每条路径都有最大步骤、预算和终止条件。
 - 状态可序列化、错误可诊断，取消不会被吞掉。

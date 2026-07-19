@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"errors"
+
+	"github.com/cloudwego/eino/compose"
 )
 
 var errExerciseIncomplete = errors.New("练习尚未完成，请按 TODO 顺序实现")
@@ -31,13 +33,8 @@ func classifyRoute(input routeInput) (routeKind, error) {
 	return "", errExerciseIncomplete
 }
 
-type compiledGraph interface {
-	// Invoke 执行已经编译的路由 Graph。
-	Invoke(ctx context.Context, input routeInput) (routeOutput, error)
-}
-
 // buildRoutingGraph 注册分支节点、边和结束节点并编译 Graph。
-func buildRoutingGraph(ctx context.Context) (compiledGraph, error) {
+func buildRoutingGraph(ctx context.Context) (compose.Runnable[routeInput, routeOutput], error) {
 	return nil, errExerciseIncomplete
 }
 
@@ -49,8 +46,8 @@ func runExercise(ctx context.Context) error {
 
 	// TODO 1：定义知识、商品、订单和澄清路由类型。
 	// TODO 2：实现 classifyRoute，固定业务规则优先于模型判断。
-	// TODO 3：使用 Eino Graph 注册路由节点、三个业务节点和澄清节点。
-	// TODO 4：连接所有分支到结束节点并编译 Graph。
+	// TODO 3：使用 compose.NewGraph 注册路由节点、三个业务节点和澄清节点。
+	// TODO 4：通过真实分支边连接结束节点并 Compile 为 compose.Runnable。
 	// TODO 5：覆盖未知分类、节点错误、取消和每条分支可达性。
 	return errExerciseIncomplete
 }

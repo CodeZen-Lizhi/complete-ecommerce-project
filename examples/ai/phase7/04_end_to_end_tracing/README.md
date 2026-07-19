@@ -14,8 +14,8 @@
 
 核心接口与函数签名位于 `exercise.go`，`main.go` 只保留安全启动入口。
 
-1. TODO 1：在入口创建或校验 trace ID，并写入 Context。
-2. TODO 2：为各组件创建有父子关系的 span。
+1. TODO 1：创建真实 OpenTelemetry stdout Exporter、SDK TracerProvider 和入口根 Span。
+2. TODO 2：使用 `otel.Tracer` 为各组件创建有父子关系的 Span。
 3. TODO 3：记录耗时、状态、模型名和结果数量等低敏属性。
 4. TODO 4：错误写入 span，但不记录 Prompt、Secret 或完整文档。
 5. TODO 5：验证一次请求能够还原完整调用链和失败节点。
@@ -26,7 +26,7 @@
 go run ./examples/ai/phase7/04_end_to_end_tracing
 ```
 
-骨架固定为 `dry-run`，不会执行真实发布、故障注入或外部写操作。
+完成 TODO 后程序会把真实 OpenTelemetry Span 导出到标准输出，可直接检查父子关系和错误状态。
 
 ## 验证方式
 
@@ -37,6 +37,8 @@ go vet ./examples/ai/phase7/04_end_to_end_tracing
 ```
 
 ## 完成标准
+
+- 实际创建 `sdktrace.TracerProvider` 并导出 Span；只实现本地 `tracer` 接口不算完成。
 
 - 日志、指标和 Trace 不包含 Secret、PII 或高基数敏感标签。
 - 超时、限流、健康和降级状态可以被测试和观察。

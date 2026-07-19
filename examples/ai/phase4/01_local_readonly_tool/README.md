@@ -17,7 +17,7 @@
 1. TODO 1：定义 Tool Schema、名称、用途和只读边界。
 2. TODO 2：解析参数并拒绝空值和未知字段。
 3. TODO 3：实现本地只读查询，传播 Context 取消。
-4. TODO 4：将工具注册到 ToolsNode 并执行一次调用。
+4. TODO 4：通过 `compose.NewToolNode` 注册真实 Eino `tool.BaseTool`，并执行一次 Tool Call。
 5. TODO 5：检查结果大小和错误，不返回内部敏感数据。
 
 ## 开始练习
@@ -37,6 +37,8 @@ go vet ./examples/ai/phase4/01_local_readonly_tool
 ```
 
 ## 完成标准
+
+- 实际创建并调用 `*compose.ToolsNode`；只写自定义 `toolExecutor` 不算完成。
 
 - 参数、身份、租户、权限和结果上限都在工具边界验证。
 - Context 取消和依赖错误清楚传播，错误不泄露敏感内部信息。

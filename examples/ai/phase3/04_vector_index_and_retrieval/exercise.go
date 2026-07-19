@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"errors"
+	"net/http"
+	"strings"
 )
 
 var errExerciseIncomplete = errors.New("练习尚未完成，请按 TODO 顺序实现")
@@ -25,6 +27,20 @@ type retriever interface {
 	Retrieve(ctx context.Context, query string, topK int) ([]indexedDocument, error)
 }
 
+type qdrantConfig struct {
+	BaseURL    string
+	Collection string
+	APIKey     string
+}
+
+// newQdrantHTTPClient 校验真实 Qdrant 地址和集合配置，并返回用于 REST API 调用的 Client。
+func newQdrantHTTPClient(config qdrantConfig) (*http.Client, error) {
+	if strings.TrimSpace(config.BaseURL) == "" || strings.TrimSpace(config.Collection) == "" {
+		return nil, errors.New("Qdrant Base URL 和 Collection 不能为空")
+	}
+	return nil, errExerciseIncomplete
+}
+
 // validateIndexBatch 校验 ID、内容、Metadata 和批量上限。
 func validateIndexBatch(documents []indexedDocument) error {
 	return errExerciseIncomplete
@@ -37,9 +53,9 @@ func runExercise(ctx context.Context) error {
 	}
 
 	// TODO 1：定义稳定文档 ID、Chunk ID、向量维度和 Metadata 契约。
-	// TODO 2：创建 Eino Embedder、Indexer 与 Retriever，并校验模型维度和存储配置一致。
+	// TODO 2：从 VECTOR_BASE_URL 创建真实 Qdrant Client 和集合，再接入 Eino Embedder、Indexer 与 Retriever。
 	// TODO 3：实现 validateIndexBatch 后批量写入，区分重复 ID、部分失败和完整失败。
 	// TODO 4：对查询执行 Retrieve，校验 Top-K、空结果和返回顺序。
-	// TODO 5：输出命中文档、分数和 Metadata，并验证 Delete 后不再召回。
+	// TODO 5：对真实 Qdrant 输出命中文档、分数和 Metadata，并验证 Delete 后不再召回。
 	return errExerciseIncomplete
 }

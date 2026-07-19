@@ -21,14 +21,15 @@
 - [01_basic_chat](./phase2/01_basic_chat/README.md)：基础模型调用
 - [02_eino_generate](./phase2/02_eino_generate/README.md)：Eino Generate
 - [03_prompt_roles](./phase2/03_prompt_roles/README.md)：System 与 User Prompt
-- [04_in_memory_multi_turn](./phase2/04_in_memory_multi_turn/README.md)：程序内多轮对话
-- [05_redis_session_history](./phase2/05_redis_session_history/README.md)：Redis 会话历史
-- [06_session_history_limits](./phase2/06_session_history_limits/README.md)：历史截断、TTL 与隔离
-- [07_chat_template](./phase2/07_chat_template/README.md)：ChatTemplate
-- [08_streaming_chat](./phase2/08_streaming_chat/README.md)：Stream
-- [09_structured_json_output](./phase2/09_structured_json_output/README.md)：结构化 JSON
-- [10_call_governance](./phase2/10_call_governance/README.md)：调用治理
-- [11_model_provider_adapter](./phase2/11_model_provider_adapter/README.md)：模型适配层
+- [04_few_shot_comparison](./phase2/04_few_shot_comparison/README.md)：Zero-shot 与 Few-shot 对比
+- [05_in_memory_multi_turn](./phase2/05_in_memory_multi_turn/README.md)：程序内多轮对话
+- [06_redis_session_history](./phase2/06_redis_session_history/README.md)：Redis 会话历史
+- [07_session_history_limits](./phase2/07_session_history_limits/README.md)：历史截断、TTL 与隔离
+- [08_chat_template](./phase2/08_chat_template/README.md)：ChatTemplate
+- [09_streaming_chat](./phase2/09_streaming_chat/README.md)：Stream
+- [10_structured_json_output](./phase2/10_structured_json_output/README.md)：Prompt 与原生 JSON Schema 结构化输出
+- [11_call_governance](./phase2/11_call_governance/README.md)：调用治理
+- [12_model_provider_adapter](./phase2/12_model_provider_adapter/README.md)：模型适配层
 
 ## 阶段 3：RAG
 

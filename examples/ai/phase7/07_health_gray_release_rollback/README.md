@@ -26,7 +26,7 @@
 go run ./examples/ai/phase7/07_health_gray_release_rollback
 ```
 
-骨架固定为 `dry-run`，不会执行真实发布、故障注入或外部写操作。
+完成 TODO 后需要连接练习专用发布控制端点，执行小流量扩量和回滚演练；禁止指向生产环境。
 
 ## 验证方式
 
@@ -37,6 +37,8 @@ go vet ./examples/ai/phase7/07_health_gray_release_rollback
 ```
 
 ## 完成标准
+
+- 从 `RELEASE_CONTROL_BASE_URL` 连接真实练习环境并执行权重调整与回滚；只计算枚举结果不算完成。
 
 - 日志、指标和 Trace 不包含 Secret、PII 或高基数敏感标签。
 - 超时、限流、健康和降级状态可以被测试和观察。

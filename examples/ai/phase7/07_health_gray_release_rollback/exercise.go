@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"errors"
+	"net/http"
+	"strings"
 	"time"
 )
 
@@ -31,6 +33,19 @@ const (
 	rolloutRollback rolloutDecision = "rollback"
 )
 
+type releaseControlConfig struct {
+	BaseURL string
+	APIKey  string
+}
+
+// newReleaseControlClient 校验真实发布控制端点，并返回执行流量调整和回滚请求的 HTTP Client。
+func newReleaseControlClient(config releaseControlConfig) (*http.Client, error) {
+	if strings.TrimSpace(config.BaseURL) == "" {
+		return nil, errors.New("发布控制 Base URL 不能为空")
+	}
+	return nil, errExerciseIncomplete
+}
+
 // evaluateRollout 根据错误率、P95、质量和最小样本决定扩量或回滚。
 func evaluateRollout(baseline releaseMetrics, candidate releaseMetrics) (rolloutDecision, error) {
 	return rolloutHold, errExerciseIncomplete
@@ -49,8 +64,8 @@ func runExercise(ctx context.Context) error {
 
 	// TODO 1：定义 liveness、readiness 和 degraded 的独立语义。
 	// TODO 2：实现 validateHealth，依赖降级不能伪装为完全健康。
-	// TODO 3：定义版本、配置和模型路由发布标识。
-	// TODO 4：实现 evaluateRollout，最小样本不足时保持，不盲目扩量。
-	// TODO 5：验证回滚后会话、任务和索引版本仍兼容。
+	// TODO 3：从 RELEASE_CONTROL_BASE_URL 创建真实发布控制 Client，并读取版本、配置和模型路由标识。
+	// TODO 4：实现 evaluateRollout，最小样本不足时保持；Expand 时真实调整流量权重，Rollback 时调用回滚端点。
+	// TODO 5：执行一次小流量扩量和一次回滚演练，验证会话、任务和索引版本仍兼容。
 	return errExerciseIncomplete
 }

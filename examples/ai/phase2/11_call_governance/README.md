@@ -1,4 +1,4 @@
-# 阶段 2 练习 10：模型调用治理
+# 阶段 2 练习 11：模型调用治理
 
 ## 练习目标
 
@@ -16,7 +16,7 @@
 ## 开始练习
 
 ```bash
-go run ./examples/ai/phase2/10_call_governance
+go run ./examples/ai/phase2/11_call_governance
 ```
 
 默认 API Key 或外部服务配置保持占位符时，程序应明确提示配置未完成，不得连接外部服务或产生付费请求。
@@ -24,9 +24,9 @@ go run ./examples/ai/phase2/10_call_governance
 ## 验证方式
 
 ```bash
-gofmt -w examples/ai/phase2/10_call_governance/*.go
-go test -timeout=60s ./examples/ai/phase2/10_call_governance
-go vet ./examples/ai/phase2/10_call_governance
+gofmt -w examples/ai/phase2/11_call_governance/*.go
+go test -timeout=60s ./examples/ai/phase2/11_call_governance
+go vet ./examples/ai/phase2/11_call_governance
 ```
 
 ## 完成标准

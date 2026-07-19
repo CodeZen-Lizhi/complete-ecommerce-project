@@ -1,4 +1,4 @@
-# 阶段 2 练习 11：模型厂商适配层
+# 阶段 2 练习 12：模型厂商适配层
 
 ## 练习目标
 
@@ -16,7 +16,7 @@
 ## 开始练习
 
 ```bash
-go run ./examples/ai/phase2/11_model_provider_adapter
+go run ./examples/ai/phase2/12_model_provider_adapter
 ```
 
 默认 API Key 或外部服务配置保持占位符时，程序应明确提示配置未完成，不得连接外部服务或产生付费请求。
@@ -24,9 +24,9 @@ go run ./examples/ai/phase2/11_model_provider_adapter
 ## 验证方式
 
 ```bash
-gofmt -w examples/ai/phase2/11_model_provider_adapter/*.go
-go test -timeout=60s ./examples/ai/phase2/11_model_provider_adapter
-go vet ./examples/ai/phase2/11_model_provider_adapter
+gofmt -w examples/ai/phase2/12_model_provider_adapter/*.go
+go test -timeout=60s ./examples/ai/phase2/12_model_provider_adapter
+go vet ./examples/ai/phase2/12_model_provider_adapter
 ```
 
 ## 完成标准

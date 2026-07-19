@@ -1,4 +1,4 @@
-# 阶段 2 练习 5：Redis 会话历史
+# 阶段 2 练习 6：Redis 会话历史
 
 ## 练习目标
 
@@ -15,7 +15,7 @@
 ## 开始练习
 
 ```bash
-go run ./examples/ai/phase2/05_redis_session_history
+go run ./examples/ai/phase2/06_redis_session_history
 ```
 
 默认 API Key 或外部服务配置保持占位符时，程序应明确提示配置未完成，不得连接外部服务或产生付费请求。
@@ -23,9 +23,9 @@ go run ./examples/ai/phase2/05_redis_session_history
 ## 验证方式
 
 ```bash
-gofmt -w examples/ai/phase2/05_redis_session_history/*.go
-go test -timeout=60s ./examples/ai/phase2/05_redis_session_history
-go vet ./examples/ai/phase2/05_redis_session_history
+gofmt -w examples/ai/phase2/06_redis_session_history/*.go
+go test -timeout=60s ./examples/ai/phase2/06_redis_session_history
+go vet ./examples/ai/phase2/06_redis_session_history
 ```
 
 ## 完成标准

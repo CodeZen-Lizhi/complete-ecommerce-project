@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 	"errors"
+
+	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
 var errExerciseIncomplete = errors.New("练习尚未完成，请按 TODO 顺序实现")
@@ -26,6 +29,11 @@ type tracer interface {
 	Start(ctx context.Context, name string) (context.Context, span)
 }
 
+// newOpenTelemetryProvider 创建真实 stdout Exporter 和 SDK TracerProvider，调用方负责 Shutdown。
+func newOpenTelemetryProvider(ctx context.Context) (*sdktrace.TracerProvider, *stdouttrace.Exporter, error) {
+	return nil, nil, errExerciseIncomplete
+}
+
 // tracePipeline 为模型、Retriever、Rerank、Tool 和 Agent 创建父子 Span。
 func tracePipeline(ctx context.Context, tracer tracer) error {
 	return errExerciseIncomplete
@@ -37,8 +45,8 @@ func runExercise(ctx context.Context) error {
 		return errors.New("Context 不能为空")
 	}
 
-	// TODO 1：在入口创建或校验 Trace ID，并写入 Context。
-	// TODO 2：通过 tracer 为模型、Retriever、Rerank、Tool 和 Agent 创建父子 Span。
+	// TODO 1：实现 newOpenTelemetryProvider，注册真实 Exporter，并在入口通过 otel.Tracer 创建根 Span。
+	// TODO 2：通过真实 OpenTelemetry Tracer 为模型、Retriever、Rerank、Tool 和 Agent 创建父子 Span。
 	// TODO 3：只记录耗时、状态、模型名和结果数量等低敏属性。
 	// TODO 4：错误写入 Span 状态，但不记录 Prompt、Secret 或完整文档。
 	// TODO 5：实现 tracePipeline 测试，验证一次请求能还原完整调用链。

@@ -16,7 +16,7 @@
 
 1. TODO 1：定义支持的文件类型、大小上限和允许目录。
 2. TODO 2：实现 Markdown 读取并提取标题层级。
-3. TODO 3：通过可替换 Loader 接口接入 PDF 页级文本。
+3. TODO 3：选择并引入一个真实 Go PDF Loader，通过 `documentLoader` Adapter 读取本地 PDF fixture 的页级文本；手写固定页内容不算完成。
 4. TODO 4：规范化来源、页码、租户和权限 Metadata。
 5. TODO 5：拒绝空文档、越界路径和缺失权限字段，并补 fixture 测试。
 
@@ -37,6 +37,8 @@ go vet ./examples/ai/phase3/02_document_loading_metadata
 ```
 
 ## 完成标准
+
+- 实际解析仓库内 PDF fixture，并输出真实页码、来源和权限 Metadata；只构造内存文档不算完成。
 
 - 输入、空结果、维度、Top-K、权限和取消边界得到明确处理。
 - 外部依赖错误使用 `%w` 保留原因，不吞掉部分失败。

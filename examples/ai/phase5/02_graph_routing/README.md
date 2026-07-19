@@ -16,8 +16,8 @@
 
 1. TODO 1：定义路由分类和每个节点的输入/输出契约。
 2. TODO 2：实现确定性优先的路由条件，低置信度进入澄清节点。
-3. TODO 3：注册知识、商品、订单和结束节点。
-4. TODO 4：验证每条分支都能到达结束节点。
+3. TODO 3：使用真实 `compose.NewGraph` 注册知识、商品、订单、澄清和结束节点。
+4. TODO 4：连接真实分支边并 `Compile` 为 `compose.Runnable`，验证每条分支可达。
 5. TODO 5：覆盖未知分类、节点失败和 Context 取消。
 
 ## 开始练习
@@ -37,6 +37,8 @@ go vet ./examples/ai/phase5/02_graph_routing
 ```
 
 ## 完成标准
+
+- `buildRoutingGraph` 返回真实 Eino Runnable；普通 `switch` 不能替代 Graph 编排。
 
 - 每条路径都有最大步骤、预算和终止条件。
 - 状态可序列化、错误可诊断，取消不会被吞掉。
