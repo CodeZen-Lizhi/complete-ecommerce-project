@@ -24,7 +24,7 @@ main.go
 - 阅读目标层指南和直接相邻层源码，不跨层猜测接口或数据结构。
 - 修改公共接口、认证、事务、DTO 或配置前，搜索所有调用方并确认兼容性。
 - 看到 `handler/product_handler.go` 等硬编码结果时，将其视为 Demo 占位，不作为新业务实现范例。
-- 不提交 API Key、JWT Secret、数据库密码或其他真实凭证。
+- 不提交外部、共享或生产环境的 API Key、JWT Secret、数据库密码等真实凭证；`examples/ai/` 中经项目所有者确认不敏感的本地专用凭证按 [AI 学习练习](./ai-learning-exercises.md) 的配置合同执行。
 
 ## 指南索引
 

@@ -24,7 +24,7 @@ var (
 
 const (
 	baseURL      = "http://localhost:8084/v1"
-	apiKey       = "replace-with-your-api-key"
+	apiKey       = "sk-qWpIk8nVsa8VGJyNHtcAS4VaMhCDJB1z"
 	modelName    = "gpt-5.5"
 	modelTimeout = 30 * time.Second
 )
