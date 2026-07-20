@@ -15,11 +15,13 @@
 
 ## 开始练习
 
+运行前确认 `main.go` 顶部的 `baseURL`、`apiKey` 和 `modelName` 与本地 OpenAI-compatible 服务一致，并确保服务已经启动。
+
 ```bash
 go run ./examples/ai/phase2/11_call_governance
 ```
 
-默认 API Key 或外部服务配置保持占位符时，程序应明确提示配置未完成，不得连接外部服务或产生付费请求。
+该命令会产生真实模型调用；发生可重试错误时可能产生多次请求。不得将外部、共享或生产环境的真实 API Key 提交到 Git。
 
 ## 验证方式
 
