@@ -5,6 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/cloudwego/eino-ext/components/model/openai"
+	"github.com/cloudwego/eino/schema"
 )
 
 var errExerciseIncomplete = errors.New("练习尚未完成，请按 TODO 顺序实现")
@@ -35,9 +38,9 @@ type providerConfig struct {
 func main() {
 	config := providerConfig{
 		Provider: "openai-compatible",
-		BaseURL:  "http://localhost:8084/v1",
+		BaseURL:  "http://127.0.0.1:8317/v1",
 		APIKey:   "replace-with-your-api-key",
-		Model:    "gpt-5.4-mini",
+		Model:    "gpt-5.5",
 	}
 
 	ctx := context.Background()
@@ -69,13 +72,52 @@ func newProvider(ctx context.Context, config providerConfig) (chatProvider, erro
 	if strings.TrimSpace(config.Model) == "" {
 		return nil, errors.New("Model 不能为空")
 	}
-
 	// TODO 1：为 OpenAI-compatible Eino ChatModel 定义 adapter，实现 chatProvider。
 	// TODO 2：在 adapter 内完成项目 Message 与 schema.Message 的双向转换，错误用 %w 包装。
 	// TODO 3：根据 config.Provider 白名单选择 adapter；未知名称明确失败，不做静默 fallback。
 	// TODO 4：把 BaseURL、APIKey、Model 和超时传给具体 SDK，但不让业务层读取 SDK 配置。
 	// TODO 5：使用 Fake Provider 测试 Factory，并验证切换配置不需要修改调用方。
-	return nil, errExerciseIncomplete
+	switch config.Provider {
+	case "openai-compatible":
+		model, err := openai.NewChatModel(ctx, &openai.ChatModelConfig{
+			Model:   config.Model,
+			APIKey:  config.APIKey,
+			BaseURL: config.BaseURL,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("模型创建失败: %q", config.Provider)
+		}
+		return &openAICompatibleProvider{
+			model: model,
+		}, nil
+	default:
+		return nil, fmt.Errorf("不支持的 Provider: %q", config.Provider)
+	}
+}
+
+type openAICompatibleProvider struct {
+	model *openai.ChatModel
+}
+
+func (op *openAICompatibleProvider) Generate(ctx context.Context, messages []message) (chatResult, error) {
+	myMessage := make([]*schema.Message, 0, len(messages))
+	for _, value := range messages {
+		myMessage = append(myMessage, &schema.Message{
+			Content: value.Content,
+			Role:    schema.RoleType(value.Role),
+		})
+	}
+	response, err := op.model.Generate(ctx, myMessage)
+	if err != nil {
+		return chatResult{}, err
+	}
+	result := chatResult{
+		Content:      response.Content,
+		InputTokens:  response.ResponseMeta.Usage.PromptTokens,
+		OutputTokens: response.ResponseMeta.Usage.CompletionTokens,
+	}
+	return result, nil
+
 }
 
 // runDemo 只通过项目 chatProvider 接口完成一次调用，不依赖具体模型 SDK。
@@ -87,6 +129,7 @@ func runDemo(ctx context.Context, provider chatProvider) (chatResult, error) {
 		return chatResult{}, errors.New("Chat Provider 不能为空")
 	}
 
+	provider.Generate(ctx, []message{})
 	// TODO 6：组装项目 message，调用 provider.Generate，并使用 %w 包装厂商适配器错误。
 	// 成功后校验 Content 非空和 Token 非负，再返回统一 chatResult。
 	return chatResult{}, errExerciseIncomplete
