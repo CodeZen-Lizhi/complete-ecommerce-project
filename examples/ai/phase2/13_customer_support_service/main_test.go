@@ -11,7 +11,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/cloudwego/eino/schema"
+	"github.com/redis/go-redis/v9"
 	"golang.org/x/time/rate"
 )
 
@@ -58,6 +60,237 @@ func TestDefaultBusinessKnowledge(t *testing.T) {
 	}
 	if _, err := knowledge.contextFor(customerIntent("unknown")); err == nil {
 		t.Fatal("未知意图应被拒绝")
+	}
+}
+
+// TestBuildClassificationResponseFormat 验证分类阶段使用严格、封闭且字段完整的 JSON Schema。
+func TestBuildClassificationResponseFormat(t *testing.T) {
+	format, err := buildClassificationResponseFormat()
+	if err != nil {
+		t.Fatalf("构造分类 JSON Schema 失败: %v", err)
+	}
+	if format == nil || format.Type != openai.ChatCompletionResponseFormatTypeJSONSchema {
+		t.Fatal("分类响应格式必须使用原生 JSON Schema")
+	}
+	if format.JSONSchema == nil || !format.JSONSchema.Strict || format.JSONSchema.JSONSchema == nil {
+		t.Fatal("分类响应格式必须启用 Strict 并提供 JSON Schema")
+	}
+
+	rawSchema, err := json.Marshal(format.JSONSchema.JSONSchema)
+	if err != nil {
+		t.Fatalf("序列化分类 JSON Schema 失败: %v", err)
+	}
+	schemaText := string(rawSchema)
+	for _, expected := range []string{
+		`"additionalProperties":false`,
+		`"required":["intent","response_style","requires_handoff"]`,
+		`"product_advice"`,
+		`"delivery_return"`,
+		`"after_sales"`,
+		`"general"`,
+		`"concise"`,
+		`"guided"`,
+		`"empathetic"`,
+	} {
+		if !strings.Contains(schemaText, expected) {
+			t.Fatalf("分类 JSON Schema 缺少约束 %s: %s", expected, schemaText)
+		}
+	}
+}
+
+// TestClassificationSystemMessage 验证分类 System Message 使用 System 角色并覆盖固定分类契约。
+func TestClassificationSystemMessage(t *testing.T) {
+	message, err := classificationSystemMessage()
+	if err != nil {
+		t.Fatalf("构造分类 System Message 失败: %v", err)
+	}
+	if message == nil || message.Role != schema.System {
+		t.Fatal("分类消息必须使用 System 角色")
+	}
+	if strings.TrimSpace(message.Content) == "" {
+		t.Fatal("分类 System Message 不能为空")
+	}
+	for _, expected := range []string{
+		"product_advice",
+		"delivery_return",
+		"after_sales",
+		"general",
+		"concise",
+		"guided",
+		"empathetic",
+		"requires_handoff",
+		"JSON Schema",
+	} {
+		if !strings.Contains(message.Content, expected) {
+			t.Fatalf("分类 System Message 缺少约束 %q: %s", expected, message.Content)
+		}
+	}
+}
+
+// TestClassificationFewShotMessages 验证三个分类样例按 User/Assistant 顺序提供合法分类 JSON。
+func TestClassificationFewShotMessages(t *testing.T) {
+	messages, err := classificationFewShotMessages()
+	if err != nil {
+		t.Fatalf("构造分类 Few-shot 消息失败: %v", err)
+	}
+	expectedResults := []classification{
+		{Intent: intentProductAdvice, ResponseStyle: styleGuided, RequiresHandoff: false},
+		{Intent: intentDeliveryReturn, ResponseStyle: styleConcise, RequiresHandoff: false},
+		{Intent: intentAfterSales, ResponseStyle: styleEmpathetic, RequiresHandoff: true},
+	}
+	if len(messages) != len(expectedResults)*2 {
+		t.Fatalf("Few-shot 消息数量 = %d，期望 %d", len(messages), len(expectedResults)*2)
+	}
+
+	for index, expected := range expectedResults {
+		userMessage := messages[index*2]
+		assistantMessage := messages[index*2+1]
+		if userMessage == nil || userMessage.Role != schema.User || strings.TrimSpace(userMessage.Content) == "" {
+			t.Fatalf("第 %d 个 Few-shot User 消息无效: %+v", index, userMessage)
+		}
+		if assistantMessage == nil || assistantMessage.Role != schema.Assistant {
+			t.Fatalf("第 %d 个 Few-shot Assistant 消息无效: %+v", index, assistantMessage)
+		}
+
+		var actual classification
+		if err := json.Unmarshal([]byte(assistantMessage.Content), &actual); err != nil {
+			t.Fatalf("第 %d 个 Few-shot Assistant JSON 无效: %v", index, err)
+		}
+		if actual != expected {
+			t.Fatalf("第 %d 个 Few-shot 分类 = %+v，期望 %+v", index, actual, expected)
+		}
+	}
+}
+
+// TestBuildAnswerMessages 验证回答模板按 System、历史、当前 User 的顺序展开 typed 消息历史。
+func TestBuildAnswerMessages(t *testing.T) {
+	history := []*schema.Message{
+		schema.UserMessage("之前的问题"),
+		schema.AssistantMessage("之前的回答", nil),
+	}
+	classificationResult := classification{
+		Intent:          intentDeliveryReturn,
+		ResponseStyle:   styleGuided,
+		RequiresHandoff: false,
+	}
+
+	messages, err := buildAnswerMessages(
+		context.Background(),
+		classificationResult,
+		"配送状态以订单页为准。",
+		history,
+		"我的订单什么时候到？",
+	)
+	if err != nil {
+		t.Fatalf("构造回答消息失败: %v", err)
+	}
+	if len(messages) != len(history)+2 {
+		t.Fatalf("回答消息数量 = %d，期望 %d", len(messages), len(history)+2)
+	}
+	if messages[0] == nil || messages[0].Role != schema.System {
+		t.Fatalf("第一条消息必须是 System: %+v", messages[0])
+	}
+	for _, expected := range []string{
+		string(intentDeliveryReturn),
+		string(styleGuided),
+		"配送状态以订单页为准。",
+	} {
+		if !strings.Contains(messages[0].Content, expected) {
+			t.Fatalf("回答 System Message 缺少 %q: %s", expected, messages[0].Content)
+		}
+	}
+	for index, expected := range history {
+		actual := messages[index+1]
+		if actual == nil || actual.Role != expected.Role || actual.Content != expected.Content {
+			t.Fatalf("第 %d 条历史消息未按原顺序展开: %+v", index, actual)
+		}
+	}
+	if messages[3] == nil || messages[3].Role != schema.User || messages[3].Content != "我的订单什么时候到？" {
+		t.Fatalf("最后一条消息必须是当前 User: %+v", messages[3])
+	}
+
+	emptyHistoryMessages, err := buildAnswerMessages(
+		context.Background(),
+		classificationResult,
+		"配送状态以订单页为准。",
+		nil,
+		"怎么查询物流？",
+	)
+	if err != nil {
+		t.Fatalf("空历史应允许格式化: %v", err)
+	}
+	if len(emptyHistoryMessages) != 2 || emptyHistoryMessages[0].Role != schema.System || emptyHistoryMessages[1].Role != schema.User {
+		t.Fatalf("空历史消息顺序不正确: %+v", emptyHistoryMessages)
+	}
+}
+
+// TestRedisHistoryStore 验证 Redis 历史按完整轮次读取，并原子追加、裁剪和刷新 TTL。
+func TestRedisHistoryStore(t *testing.T) {
+	userMessage := schema.UserMessage("之前的问题")
+	assistantMessage := schema.AssistantMessage("之前的回答", nil)
+	encodedUserMessage, err := json.Marshal(userMessage)
+	if err != nil {
+		t.Fatalf("编码测试 User Message 失败: %v", err)
+	}
+	encodedAssistantMessage, err := json.Marshal(assistantMessage)
+	if err != nil {
+		t.Fatalf("编码测试 Assistant Message 失败: %v", err)
+	}
+
+	hook := &redisHistoryHook{
+		lrangeValues: []string{string(encodedUserMessage), string(encodedAssistantMessage)},
+	}
+	client := redis.NewClient(&redis.Options{Addr: "127.0.0.1:0"})
+	client.AddHook(hook)
+	t.Cleanup(func() { _ = client.Close() })
+
+	store, err := newRedisHistoryStore(client, 2, time.Minute)
+	if err != nil {
+		t.Fatalf("创建 Redis 历史 Store 失败: %v", err)
+	}
+	messages, err := store.Load(context.Background(), "learner-1001", "checkout-help")
+	if err != nil {
+		t.Fatalf("读取 Redis 历史失败: %v", err)
+	}
+	if len(messages) != 2 || messages[0].Role != schema.User || messages[1].Role != schema.Assistant {
+		t.Fatalf("Redis 历史轮次不完整: %+v", messages)
+	}
+	if len(hook.processArgs) != 4 || hook.processArgs[0] != "lrange" || hook.processArgs[1] != historyKeyPrefix+"learner-1001:checkout-help" {
+		t.Fatalf("LRange 参数不正确: %+v", hook.processArgs)
+	}
+	if start, ok := hook.processArgs[2].(int64); !ok || start != -4 {
+		t.Fatalf("LRange 起始下标 = %#v，期望 -4", hook.processArgs[2])
+	}
+	if stop, ok := hook.processArgs[3].(int64); !ok || stop != -1 {
+		t.Fatalf("LRange 结束下标 = %#v，期望 -1", hook.processArgs[3])
+	}
+
+	if err := store.AppendTurn(context.Background(), "learner-1001", "checkout-help", userMessage, assistantMessage); err != nil {
+		t.Fatalf("追加 Redis 历史失败: %v", err)
+	}
+	expectedCommands := []string{"multi", "rpush", "ltrim", "expire", "exec"}
+	if len(hook.pipelineArgs) != len(expectedCommands) {
+		t.Fatalf("事务命令数量 = %d，期望 %d: %+v", len(hook.pipelineArgs), len(expectedCommands), hook.pipelineArgs)
+	}
+	for index, expectedCommand := range expectedCommands {
+		if len(hook.pipelineArgs[index]) == 0 || hook.pipelineArgs[index][0] != expectedCommand {
+			t.Fatalf("第 %d 条事务命令不正确: %+v", index, hook.pipelineArgs[index])
+		}
+	}
+	for index, value := range hook.pipelineArgs[1][2:] {
+		raw, ok := value.([]byte)
+		if !ok {
+			t.Fatalf("RPUSH 第 %d 条消息不是 JSON 字节: %T", index, value)
+		}
+		var message schema.Message
+		if err := json.Unmarshal(raw, &message); err != nil {
+			t.Fatalf("RPUSH 第 %d 条消息不是合法 JSON: %v", index, err)
+		}
+	}
+
+	hook.lrangeValues = []string{string(encodedUserMessage)}
+	if _, err := store.Load(context.Background(), "learner-1001", "checkout-help"); err == nil {
+		t.Fatal("奇数条 Redis 历史必须被拒绝")
 	}
 }
 
@@ -419,6 +652,42 @@ func (store *fakeHistoryStore) AppendTurn(_ context.Context, userID string, sess
 	store.lastUserMessage = userMessage
 	store.lastAssistantMessage = assistantMessage
 	return store.appendErr
+}
+
+// redisHistoryHook 在不连接真实 Redis 的情况下记录历史读写命令。
+type redisHistoryHook struct {
+	lrangeValues []string
+	processArgs  []any
+	pipelineArgs [][]any
+}
+
+// DialHook 保留 go-redis 默认连接逻辑；测试命令均由其他 Hook 提前返回。
+func (hook *redisHistoryHook) DialHook(next redis.DialHook) redis.DialHook {
+	return next
+}
+
+// ProcessHook 返回预设的 LRANGE 数据并记录命令参数。
+func (hook *redisHistoryHook) ProcessHook(_ redis.ProcessHook) redis.ProcessHook {
+	return func(_ context.Context, cmd redis.Cmder) error {
+		hook.processArgs = append([]any(nil), cmd.Args()...)
+		result, ok := cmd.(*redis.StringSliceCmd)
+		if !ok {
+			return errors.New("测试 Redis Hook 只支持 StringSliceCmd")
+		}
+		result.SetVal(append([]string(nil), hook.lrangeValues...))
+		return nil
+	}
+}
+
+// ProcessPipelineHook 记录事务 Pipeline 内的 RPUSH、LTRIM 和 EXPIRE 命令。
+func (hook *redisHistoryHook) ProcessPipelineHook(_ redis.ProcessPipelineHook) redis.ProcessPipelineHook {
+	return func(_ context.Context, commands []redis.Cmder) error {
+		hook.pipelineArgs = make([][]any, 0, len(commands))
+		for _, command := range commands {
+			hook.pipelineArgs = append(hook.pipelineArgs, append([]any(nil), command.Args()...))
+		}
+		return nil
+	}
 }
 
 // recordingEmitter 提供不提交 HTTP 响应的离线事件接收器。

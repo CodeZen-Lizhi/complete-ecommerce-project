@@ -48,6 +48,7 @@ func runExercise(ctx context.Context) error {
 		return err
 	}
 	knowledge := defaultBusinessKnowledge()
+	// classificationFormat 约束分类模型返回严格的意图、回答风格和转人工结果。
 	classificationFormat, err := buildClassificationResponseFormat()
 	if err != nil {
 		return err

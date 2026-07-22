@@ -118,9 +118,28 @@ func (provider *einoChatProvider) Generate(ctx context.Context, call modelCall) 
 	if err := validateModelCall(call); err != nil {
 		return modelResult{}, err
 	}
-
+	result, err := provider.chatModel.Generate(ctx, call.Messages)
+	if err != nil {
+		return modelResult{}, fmt.Errorf("Eino Generate 调用失败: %w", err)
+	}
 	// TODO 1：调用 chatModel.Generate，校验非空文本并从 ResponseMeta 归一化可选 Token Usage。
-	return modelResult{}, errExerciseIncomplete
+	if result == nil {
+		return modelResult{}, fmt.Errorf("模型响应不能为空")
+	}
+	if strings.TrimSpace(result.Content) == "" {
+		return modelResult{}, fmt.Errorf("模型响应文本不能为空")
+	}
+
+	modelResultValue := modelResult{Content: result.Content}
+	if result.ResponseMeta != nil && result.ResponseMeta.Usage != nil {
+		modelResultValue.Usage = tokenUsage{
+			PromptTokens:     result.ResponseMeta.Usage.PromptTokens,
+			CompletionTokens: result.ResponseMeta.Usage.CompletionTokens,
+			TotalTokens:      result.ResponseMeta.Usage.TotalTokens,
+			Available:        true,
+		}
+	}
+	return modelResultValue, nil
 }
 
 // Stream 将项目 modelCall 转成 Eino 流，并把 Reader 生命周期封装进 messageStream。
@@ -134,9 +153,60 @@ func (provider *einoChatProvider) Stream(ctx context.Context, call modelCall) (m
 	if err := validateModelCall(call); err != nil {
 		return nil, err
 	}
-
+	reader, err := provider.chatModel.Stream(ctx, call.Messages)
+	if err != nil {
+		return nil, fmt.Errorf("创建 Eino 模型流失败: %w", err)
+	}
+	if reader == nil {
+		return nil, fmt.Errorf("Eino 模型流为空")
+	}
 	// TODO 2：调用 chatModel.Stream，并以适配器暴露 Recv/Close、文本块和最终 Usage。
-	return nil, errExerciseIncomplete
+	return &einoMessageStream{reader: reader}, nil
+}
+
+// einoMessageStream 将 Eino StreamReader 转换为项目内部的 messageStream。
+type einoMessageStream struct {
+	reader *schema.StreamReader[*schema.Message]
+}
+
+// Recv 读取并转换一个 Eino 消息块；EOF 和底层接收错误原样向上游传播。
+func (stream *einoMessageStream) Recv() (modelChunk, error) {
+	if stream == nil || stream.reader == nil {
+		return modelChunk{}, fmt.Errorf("Eino 流未初始化")
+	}
+
+	message, err := stream.reader.Recv()
+	if err != nil {
+		// io.EOF、context.Canceled 等错误原样传出去
+		return modelChunk{}, err
+	}
+	if message == nil {
+		return modelChunk{}, fmt.Errorf("模型流消息为空")
+	}
+
+	chunk := modelChunk{
+		Content: message.Content,
+	}
+
+	// Token Usage 通常只在最后一个空内容块中返回
+	if message.ResponseMeta != nil && message.ResponseMeta.Usage != nil {
+		usage := message.ResponseMeta.Usage
+		chunk.Usage = tokenUsage{
+			PromptTokens:     usage.PromptTokens,
+			CompletionTokens: usage.CompletionTokens,
+			TotalTokens:      usage.TotalTokens,
+			Available:        true,
+		}
+	}
+
+	return chunk, nil
+}
+
+// Close 释放底层 Eino 流及其持有的资源。
+func (stream *einoMessageStream) Close() {
+	if stream != nil && stream.reader != nil {
+		stream.reader.Close()
+	}
 }
 
 // validateModelCall 拒绝空消息列表和空消息内容，避免无意义的模型请求。
