@@ -47,11 +47,11 @@ func TestLoadExerciseConfig(t *testing.T) {
 	}
 }
 
-// TestLoadBusinessKnowledge 验证本地知识快照包含且只包含四个受支持意图。
-func TestLoadBusinessKnowledge(t *testing.T) {
-	knowledge, err := loadBusinessKnowledge("testdata/business_context.json")
-	if err != nil {
-		t.Fatalf("加载业务知识失败: %v", err)
+// TestDefaultBusinessKnowledge 验证内置知识包含且只包含四个受支持意图。
+func TestDefaultBusinessKnowledge(t *testing.T) {
+	knowledge := defaultBusinessKnowledge()
+	if err := validateBusinessKnowledge(knowledge); err != nil {
+		t.Fatalf("校验内置业务知识失败: %v", err)
 	}
 	if _, err := knowledge.contextFor(intentDeliveryReturn); err != nil {
 		t.Fatalf("读取配送退换知识失败: %v", err)

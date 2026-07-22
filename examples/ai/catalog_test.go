@@ -18,6 +18,7 @@ var exerciseDirectoryPattern = regexp.MustCompile(`^\d{2}_[a-z0-9_]+$`)
 var todoPattern = regexp.MustCompile(`TODO ([0-9]+)`)
 
 var requiredExerciseSymbols = map[string][]string{
+	"phase2/13_customer_support_service":       {"chatProvider", "historyStore", "customerSupportService", "newCustomerSupportRouter", "defaultBusinessKnowledge", "newOpenAIProvider", "newRedisHistoryStore", "buildClassificationResponseFormat"},
 	"phase3/01_embedding_similarity":           {"embedder", "parseEmbeddingInput", "loadEmbeddingConfig", "cosineSimilarity", "rankTopK"},
 	"phase3/02_document_loading_metadata":      {"documentLoader", "pdfLoaderConfig", "newPDFPageLoader", "validateDocumentPath", "normalizeDocument"},
 	"phase3/03_chunking_strategies":            {"chunker", "buildParentChildChunks"},
@@ -84,7 +85,7 @@ func TestExerciseCatalog(t *testing.T) {
 
 	expectedCounts := map[int]int{
 		1: 7,
-		2: 12,
+		2: 13,
 		3: 12,
 		4: 7,
 		5: 8,
@@ -145,14 +146,31 @@ func validatePhase(t *testing.T, phase int, expectedCount int) {
 				assertRegularFile(t, exercisePath)
 				todoPath = exercisePath
 			}
-			if key == "phase2/10_structured_json_output" {
+			switch key {
+			case "phase2/10_structured_json_output":
 				testPath := filepath.Join(phaseDir, directory, "main_test.go")
 				assertRegularFile(t, testPath)
 				validateTODOFileSet(t, mainPath, testPath)
 				validateNonStackedTODOPlacement(t, mainPath)
 				validateNonStackedTODOPlacement(t, testPath)
 				validateTODODocumentation(t, readmePath, mainPath, testPath)
-			} else {
+			case "phase2/13_customer_support_service":
+				corePaths := []string{
+					filepath.Join(phaseDir, directory, "provider.go"),
+					filepath.Join(phaseDir, directory, "classification.go"),
+					filepath.Join(phaseDir, directory, "history.go"),
+					filepath.Join(phaseDir, directory, "governance.go"),
+					filepath.Join(phaseDir, directory, "service.go"),
+				}
+				for _, corePath := range corePaths {
+					assertRegularFile(t, corePath)
+					validateNonStackedTODOPlacement(t, corePath)
+				}
+				testPath := filepath.Join(phaseDir, directory, "main_test.go")
+				assertRegularFile(t, testPath)
+				validateTODOFileSet(t, corePaths...)
+				validateTODODocumentation(t, readmePath, corePaths...)
+			default:
 				validateTODOSequence(t, todoPath)
 			}
 

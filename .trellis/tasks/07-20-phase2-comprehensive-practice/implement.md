@@ -10,7 +10,7 @@
 
 1. 创建 `examples/ai/phase2/13_customer_support_service/` 和完整的 `config.go`、`identity.go`、`http.go`、`knowledge.go`、`main.go` 基础设施。
    - 提供 loopback 地址校验、开发身份 Context、请求校验、SSE writer、Redis Ping 和关闭路径。
-   - 提供 `testdata/business_context.json`，并在启动时严格校验四个 intent 的知识数据。
+   - 在 `knowledge.go` 内置四个 intent 的确定性知识数据，并在服务装配时严格校验。
    - Redis 历史只实现一个 Store；没有 in-memory fallback。
 
 2. 定义与 SDK 隔离的模型、流、调用、Usage、指标和错误类型。

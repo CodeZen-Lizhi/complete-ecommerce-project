@@ -30,7 +30,7 @@ Content-Type: application/json
 
 - `config.go`：环境变量、回环地址和数值边界校验。
 - `identity.go`、`http.go`：开发身份中间件、严格 JSON 解码、SSE framing 和安全错误映射。
-- `knowledge.go`、`testdata/business_context.json`：固定意图和确定性业务知识选择。
+- `knowledge.go`：内置固定意图的确定性业务知识和选择逻辑，不依赖外部文件。
 - `main.go`：Redis Ping、两个独立 Provider 的装配、回环监听与优雅关闭。
 - `main_test.go`：不连接 Redis 或模型的离线保护测试。
 

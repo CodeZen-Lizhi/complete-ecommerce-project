@@ -16,7 +16,6 @@ import (
 )
 
 const (
-	knowledgePath       = "testdata/business_context.json"
 	redisPingTimeout    = 5 * time.Second
 	shutdownGracePeriod = 10 * time.Second
 )
@@ -48,10 +47,7 @@ func runExercise(ctx context.Context) error {
 	if err := pingRedis(ctx, redisClient, config.CallTimeout); err != nil {
 		return err
 	}
-	knowledge, err := loadBusinessKnowledge(knowledgePath)
-	if err != nil {
-		return err
-	}
+	knowledge := defaultBusinessKnowledge()
 	classificationFormat, err := buildClassificationResponseFormat()
 	if err != nil {
 		return err

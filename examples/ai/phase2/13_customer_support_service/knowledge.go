@@ -1,9 +1,7 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
 )
 
@@ -29,24 +27,14 @@ type businessKnowledge struct {
 	Contexts map[customerIntent]string
 }
 
-// loadBusinessKnowledge 从练习固定 JSON 文件加载业务知识，并拒绝缺失或空白分支。
-func loadBusinessKnowledge(path string) (businessKnowledge, error) {
-	content, err := os.ReadFile(path)
-	if err != nil {
-		return businessKnowledge{}, fmt.Errorf("读取业务知识失败: %w", err)
-	}
-	var raw map[string]string
-	if err := json.Unmarshal(content, &raw); err != nil {
-		return businessKnowledge{}, fmt.Errorf("解析业务知识失败: %w", err)
-	}
-	knowledge := businessKnowledge{Contexts: make(map[customerIntent]string, len(raw))}
-	for key, value := range raw {
-		knowledge.Contexts[customerIntent(key)] = strings.TrimSpace(value)
-	}
-	if err := validateBusinessKnowledge(knowledge); err != nil {
-		return businessKnowledge{}, err
-	}
-	return knowledge, nil
+// defaultBusinessKnowledge 返回练习内置的确定性业务知识，不依赖文件或外部服务。
+func defaultBusinessKnowledge() businessKnowledge {
+	return businessKnowledge{Contexts: map[customerIntent]string{
+		intentProductAdvice:  "只根据用户提供的需求给出商品选择维度，例如使用场景、预算、兼容性和售后政策。没有商品目录或实时库存时，明确说明无法确认具体库存、价格或促销。",
+		intentDeliveryReturn: "配送时效、运费、退货窗口和退款状态以订单页或官方售后规则为准。不得承诺未核验的到货日期；需要订单信息时引导用户在受保护的订单渠道查询。",
+		intentAfterSales:     "商品故障、缺件、破损或超过正常处理时效时，先收集必要订单信息并引导至人工售后。不得要求用户在聊天中发送完整支付凭证、密码或身份证件。",
+		intentGeneral:        "回答保持简洁、礼貌和可执行。无法根据有限上下文确认的事实必须明确说明，并在需要订单、账户或支付数据时建议使用受保护的官方渠道。",
+	}}
 }
 
 // validateBusinessKnowledge 确保每个受支持意图都有非空、确定性的本地知识片段。
