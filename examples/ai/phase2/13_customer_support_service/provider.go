@@ -122,7 +122,7 @@ func (provider *einoChatProvider) Generate(ctx context.Context, call modelCall) 
 	if err != nil {
 		return modelResult{}, fmt.Errorf("Eino Generate 调用失败: %w", err)
 	}
-	// TODO 1：调用 chatModel.Generate，校验非空文本并从 ResponseMeta 归一化可选 Token Usage。
+	//  1：调用 chatModel.Generate，校验非空文本并从 ResponseMeta 归一化可选 Token Usage。
 	if result == nil {
 		return modelResult{}, fmt.Errorf("模型响应不能为空")
 	}
@@ -160,7 +160,7 @@ func (provider *einoChatProvider) Stream(ctx context.Context, call modelCall) (m
 	if reader == nil {
 		return nil, fmt.Errorf("Eino 模型流为空")
 	}
-	// TODO 2：调用 chatModel.Stream，并以适配器暴露 Recv/Close、文本块和最终 Usage。
+	//  2：调用 chatModel.Stream，并以适配器暴露 Recv/Close、文本块和最终 Usage。
 	return &einoMessageStream{reader: reader}, nil
 }
 

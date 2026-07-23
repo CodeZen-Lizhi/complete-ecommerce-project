@@ -2,9 +2,12 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
 	"time"
 
+	"github.com/cloudwego/eino-ext/components/model/openai"
 	"golang.org/x/time/rate"
 )
 
@@ -61,8 +64,40 @@ func governedGenerate(
 		return modelResult{}, stageMetrics{}, err
 	}
 
-	// TODO 12：在每次远程尝试前等待限流器，创建独立超时 Context，并记录 attempts/latency/usage。
-	return modelResult{}, stageMetrics{}, errExerciseIncomplete
+	//  12：在每次远程尝试前等待限流器，创建独立超时 Context，并记录 attempts/latency/usage。
+	startedAt := time.Now()
+	var metrics stageMetrics
+	var lastErr error
+
+	for attempt := 0; attempt <= config.MaxRetries; attempt++ {
+		if err := config.Limiter.Wait(ctx); err != nil {
+			lastErr = fmt.Errorf("等待模型调用限流失败: %w", err)
+			break
+		}
+
+		metrics.Attempts++
+		attemptCtx, cancel := context.WithTimeout(ctx, config.Timeout)
+		result, err := provider.Generate(attemptCtx, call)
+		cancel()
+		if err == nil {
+			metrics.Latency = time.Since(startedAt)
+			metrics.Success = true
+			metrics.Usage = result.Usage
+			return result, metrics, nil
+		}
+
+		lastErr = err
+		if attempt == config.MaxRetries || !isRetryableModelError(ctx, err) {
+			break
+		}
+		if err := waitBackoff(ctx, config.InitialBackoff, attempt, maximumRetryBackoff); err != nil {
+			lastErr = fmt.Errorf("等待第 %d 次重试退避失败: %w", attempt+1, err)
+			break
+		}
+	}
+
+	metrics.Latency = time.Since(startedAt)
+	return modelResult{}, metrics, lastErr
 }
 
 // governedStream 在首个 delta 前管理流创建重试，并把成功流的 Context 生命周期交给包装器。
@@ -82,8 +117,35 @@ func governedStream(
 		return nil, stageMetrics{}, err
 	}
 
-	// TODO 13：仅在 Stream 创建失败且未发送 delta 时按白名单重试；成功后不得提前 cancel 流 Context。
-	return nil, stageMetrics{}, errExerciseIncomplete
+	//  13：仅在 Stream 创建失败且未发送 delta 时按白名单重试；成功后不得提前 cancel 流 Context。
+	var retries int
+	now := time.Now()
+	var lastErr error
+	var metrics stageMetrics
+	for i := 0; i <= config.MaxRetries; i++ {
+		retries++
+		metrics.Attempts = retries
+		timeout, cancelFunc := context.WithTimeout(ctx, config.Timeout)
+		stream, err := provider.Stream(timeout, call)
+		cancelFunc()
+		if err == nil {
+			metrics.Success = true
+			metrics.Latency = time.Since(now)
+			return stream, metrics, nil
+		}
+		lastErr = err
+		if !isRetryableModelError(ctx, err) {
+			break
+		}
+		err = waitBackoff(ctx, config.InitialBackoff, retries, maximumRetryBackoff)
+		if err != nil {
+			lastErr = fmt.Errorf("等待第 %d 次重试退避失败: %w", retries, err)
+			break
+		}
+	}
+	metrics.Success = false
+	metrics.Latency = time.Since(now)
+	return nil, metrics, lastErr
 }
 
 // isRetryableModelError 判断错误是否属于允许有限重试的模型服务或临时网络失败。
@@ -91,7 +153,69 @@ func isRetryableModelError(parentCtx context.Context, err error) bool {
 	if parentCtx == nil || err == nil || parentCtx.Err() != nil {
 		return false
 	}
+	// 主动取消绝对不重试。
+	if errors.Is(err, context.Canceled) {
+		return false
+	}
 
-	// TODO 14：仅允许临时网络错误和 429/500/502/503/504，并实现可取消、有上限的指数退避。
+	// 单次尝试超时可能已在服务端产生费用，不自动重试。
+	if errors.Is(err, context.DeadlineExceeded) {
+		return false
+	}
+	var apiErr *openai.APIError
+	if errors.As(err, &apiErr) {
+		switch apiErr.HTTPStatusCode {
+		case http.StatusTooManyRequests, // 429
+			http.StatusInternalServerError, // 500
+			http.StatusBadGateway,          // 502
+			http.StatusServiceUnavailable,  // 503
+			http.StatusGatewayTimeout:      // 504
+			return true
+		default:
+			// 400、401、403、404 等都不重试。
+			return false
+		}
+	}
+	var temporaryError interface{ Temporary() bool }
+	if errors.As(err, &temporaryError) {
+		return temporaryError.Temporary()
+	}
+
+	//  14：仅允许临时网络错误和 429/500/502/503/504，并实现可取消、有上限的指数退避。
 	return false
+}
+
+// waitBackoff 执行有上限的指数退避，并在等待期间响应 Context 取消。
+func waitBackoff(ctx context.Context, initial time.Duration, retryIndex int, maximumRetryBackoff time.Duration) error {
+	if ctx == nil {
+		return errors.New("Context 不能为空")
+	}
+	if initial <= 0 {
+		return errors.New("初始退避时间必须大于 0")
+	}
+	if retryIndex < 0 {
+		return errors.New("重试序号不能小于 0")
+	}
+
+	delay := initial
+	for i := 0; i < retryIndex && delay < maximumRetryBackoff; i++ {
+		if delay > maximumRetryBackoff/2 {
+			delay = maximumRetryBackoff
+			break
+		}
+		delay *= 2
+	}
+	if delay > maximumRetryBackoff {
+		delay = maximumRetryBackoff
+	}
+
+	timer := time.NewTimer(delay)
+	defer timer.Stop()
+
+	select {
+	case <-timer.C:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }

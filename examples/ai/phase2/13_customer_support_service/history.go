@@ -89,7 +89,7 @@ func (store *redisHistoryStore) Load(ctx context.Context, userID string, session
 		messages = append(messages, message)
 	}
 
-	// TODO 6：构造隔离 Redis Key，读取末尾 maxTurns*2 条并严格反序列化完整 User/Assistant 轮次。
+	//  6：构造隔离 Redis Key，读取末尾 maxTurns*2 条并严格反序列化完整 User/Assistant 轮次。
 	return messages, nil
 }
 
@@ -143,6 +143,6 @@ func (store *redisHistoryStore) AppendTurn(
 	if err != nil {
 		return fmt.Errorf("保存完整 Redis 会话轮次失败: %w", err)
 	}
-	// TODO 7：通过 TxPipelined 原子 RPUSH 两条消息、LTRIM 到偶数上限并刷新 TTL。
+	//  7：通过 TxPipelined 原子 RPUSH 两条消息、LTRIM 到偶数上限并刷新 TTL。
 	return nil
 }

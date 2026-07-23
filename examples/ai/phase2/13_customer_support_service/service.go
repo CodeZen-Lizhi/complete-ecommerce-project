@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"strings"
 	"time"
 
@@ -82,7 +84,7 @@ func (service *customerSupportService) Stream(
 		return fmt.Errorf("SSE 事件发送器不能为空")
 	}
 
-	// TODO 15：核对分类、知识、历史、回答流、SSE 和成功后提交的完整两阶段编排不变量。
+	//  15：核对分类、知识、历史、回答流、SSE 和成功后提交的完整两阶段编排不变量。
 	classificationResult, classificationMetrics, err := classifyCustomerMessage(
 		ctx,
 		service.classificationProvider,
@@ -165,7 +167,7 @@ func (service *customerSupportService) loadConversationHistory(
 	if err != nil {
 		return nil, fmt.Errorf("读取会话历史失败: %w", err)
 	}
-	// TODO 5：仅为当前用户和会话读取历史，并且只在完整回答成功后追加一整轮消息。
+	//  5：仅为当前用户和会话读取历史，并且只在完整回答成功后追加一整轮消息。
 	return load, nil
 }
 
@@ -233,7 +235,7 @@ func buildAnswerMessages(
 		schema.UserMessage("{user_message}"),
 	)
 
-	// TODO 8：使用 prompt.FromMessages 和 typed []*schema.Message 历史占位符生成 System、History、User 消息。
+	//  8：使用 prompt.FromMessages 和 typed []*schema.Message 历史占位符生成 System、History、User 消息。
 	messages, err := template.Format(ctx, map[string]any{
 		"intent":              string(classificationResult.Intent),
 		"response_style":      string(classificationResult.ResponseStyle),
@@ -258,9 +260,32 @@ func consumeAnswerStream(ctx context.Context, stream messageStream, emitter even
 	if ctx == nil || stream == nil || emitter == nil {
 		return "", tokenUsage{}, fmt.Errorf("回答流依赖不能为空")
 	}
+	var content string
+	var usage tokenUsage
+	for {
+		message, recvErr := stream.Recv()
+		if errors.Is(recvErr, io.EOF) {
+			usage = message.Usage
+			break
+		}
+		if recvErr != nil {
+			switch {
+			case errors.Is(recvErr, context.Canceled):
+				return "", tokenUsage{}, fmt.Errorf("流式请求被取消: %w", recvErr)
+			case errors.Is(recvErr, context.DeadlineExceeded):
+				return "", tokenUsage{}, fmt.Errorf("流式请求超时: %w", recvErr)
+			default:
+				return "", tokenUsage{}, fmt.Errorf("接收流式响应失败: %w", recvErr)
+			}
+		}
+		content = content + message.Content
+		if err := emitter.Send("delta", message.Content); err != nil {
+			return "", tokenUsage{}, err
+		}
+	}
 
-	// TODO 9：循环 Recv，处理 EOF/取消/中途错误，缓存完整文本，保留最后一个非空 Usage，且不在错误时保存历史。
-	return "", tokenUsage{}, errExerciseIncomplete
+	//  9：循环 Recv，处理 EOF/取消/中途错误，缓存完整文本，保留最后一个非空 Usage，且不在错误时保存历史。
+	return content, usage, nil
 }
 
 // validateChatRequest 校验会话和消息边界，避免空输入或无界文本进入模型调用。

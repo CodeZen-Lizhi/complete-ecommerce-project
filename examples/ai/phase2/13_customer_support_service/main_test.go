@@ -508,6 +508,36 @@ func TestClassificationValidationAfterCompletion(t *testing.T) {
 	}
 }
 
+// TestDecodeAndValidateClassification 验证分类 JSON 的单值、必填字段和业务枚举约束。
+func TestDecodeAndValidateClassification(t *testing.T) {
+	classificationResult, err := decodeAndValidateClassification([]byte(validClassificationJSON))
+	if err != nil {
+		t.Fatalf("合法分类 JSON 解析失败: %v", err)
+	}
+	if classificationResult != (classification{
+		Intent:          intentDeliveryReturn,
+		ResponseStyle:   styleGuided,
+		RequiresHandoff: false,
+	}) {
+		t.Fatalf("分类结果 = %+v，不符合预期", classificationResult)
+	}
+
+	for name, raw := range map[string]string{
+		"unknown field":     `{"intent":"delivery_return","response_style":"guided","requires_handoff":false,"extra":true}`,
+		"second JSON value": validClassificationJSON + ` {}`,
+		"missing bool":      `{"intent":"delivery_return","response_style":"guided"}`,
+		"null bool":         `{"intent":"delivery_return","response_style":"guided","requires_handoff":null}`,
+		"invalid intent":    `{"intent":"other","response_style":"guided","requires_handoff":false}`,
+		"invalid style":     `{"intent":"delivery_return","response_style":"verbose","requires_handoff":false}`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			if _, err := decodeAndValidateClassification([]byte(raw)); err == nil {
+				t.Fatalf("非法分类 JSON 应被拒绝: %s", raw)
+			}
+		})
+	}
+}
+
 // TestGovernedGenerateRetriesTemporaryFailureAfterCompletion 验证临时网络错误按上限重试并记录尝试次数。
 func TestGovernedGenerateRetriesTemporaryFailureAfterCompletion(t *testing.T) {
 	provider := &fakeChatProvider{generateErrors: []error{temporaryNetworkError{}, temporaryNetworkError{}}}
@@ -528,6 +558,41 @@ func TestGovernedGenerateRetriesTemporaryFailureAfterCompletion(t *testing.T) {
 	}
 	if provider.generateCalls != 2 || metrics.Attempts != 2 {
 		t.Fatalf("重试次数不正确，provider=%d metrics=%d", provider.generateCalls, metrics.Attempts)
+	}
+}
+
+// TestGovernedGenerateRecordsSuccessfulResultMetrics 验证成功调用保留结果、使用量和尝试指标。
+func TestGovernedGenerateRecordsSuccessfulResultMetrics(t *testing.T) {
+	wantResult := modelResult{
+		Content: "分类完成",
+		Usage: tokenUsage{
+			PromptTokens:     11,
+			CompletionTokens: 7,
+			TotalTokens:      18,
+			Available:        true,
+		},
+	}
+	provider := &fakeChatProvider{generateResults: []modelResult{wantResult}}
+
+	gotResult, metrics, err := governedGenerate(
+		context.Background(),
+		provider,
+		governanceConfig{
+			Timeout:        time.Second,
+			MaxRetries:     0,
+			InitialBackoff: time.Millisecond,
+			Limiter:        rate.NewLimiter(rate.Inf, 1),
+		},
+		modelCall{Messages: []*schema.Message{schema.UserMessage("测试成功调用")}},
+	)
+	if err != nil {
+		t.Fatalf("模型调用失败: %v", err)
+	}
+	if gotResult != wantResult {
+		t.Fatalf("模型结果 = %+v，期望 %+v", gotResult, wantResult)
+	}
+	if provider.generateCalls != 1 || metrics.Attempts != 1 || !metrics.Success || metrics.Usage != wantResult.Usage {
+		t.Fatalf("调用指标不正确: provider=%d metrics=%+v", provider.generateCalls, metrics)
 	}
 }
 
