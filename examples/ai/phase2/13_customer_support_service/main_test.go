@@ -596,6 +596,65 @@ func TestGovernedGenerateRecordsSuccessfulResultMetrics(t *testing.T) {
 	}
 }
 
+// TestGovernedStreamKeepsContextUntilClose 验证成功创建的流在关闭前不会被取消。
+func TestGovernedStreamKeepsContextUntilClose(t *testing.T) {
+	provider := &fakeChatProvider{streamResults: []messageStream{&fakeMessageStream{}}}
+	stream, metrics, err := governedStream(
+		context.Background(),
+		provider,
+		governanceConfig{
+			Timeout:        time.Second,
+			MaxRetries:     0,
+			InitialBackoff: time.Millisecond,
+			Limiter:        rate.NewLimiter(rate.Inf, 1),
+		},
+		modelCall{Messages: []*schema.Message{schema.UserMessage("测试流 Context")}},
+	)
+	if err != nil {
+		t.Fatalf("创建模型流失败: %v", err)
+	}
+	if !metrics.Success || provider.lastStreamContext == nil {
+		t.Fatalf("流创建指标或 Context 不正确: metrics=%+v context=%v", metrics, provider.lastStreamContext)
+	}
+	if err := provider.lastStreamContext.Err(); err != nil {
+		t.Fatalf("成功创建后流 Context 不应被取消: %v", err)
+	}
+
+	stream.Close()
+	if !errors.Is(provider.lastStreamContext.Err(), context.Canceled) {
+		t.Fatalf("关闭流后 Context 错误 = %v，期望 context.Canceled", provider.lastStreamContext.Err())
+	}
+}
+
+// TestGovernedStreamStopsWhenLimiterWaitIsCanceled 验证限流等待取消时不会发起流调用或增加尝试次数。
+func TestGovernedStreamStopsWhenLimiterWaitIsCanceled(t *testing.T) {
+	limiter := rate.NewLimiter(rate.Every(time.Hour), 1)
+	if !limiter.Allow() {
+		t.Fatal("测试限流器应允许消费初始令牌")
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	provider := &fakeChatProvider{}
+
+	_, metrics, err := governedStream(
+		ctx,
+		provider,
+		governanceConfig{
+			Timeout:        time.Second,
+			MaxRetries:     0,
+			InitialBackoff: time.Millisecond,
+			Limiter:        limiter,
+		},
+		modelCall{Messages: []*schema.Message{schema.UserMessage("测试流限流取消")}},
+	)
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("限流等待错误 = %v，期望 context.Canceled", err)
+	}
+	if provider.streamCalls != 0 || metrics.Attempts != 0 {
+		t.Fatalf("限流等待失败不应调用 Provider 或计入尝试，stream=%d attempts=%d", provider.streamCalls, metrics.Attempts)
+	}
+}
+
 // TestHTTPEventOrderAfterCompletion 验证完成实现后 HTTP 层输出 meta、delta、done 的 SSE 顺序。
 func TestHTTPEventOrderAfterCompletion(t *testing.T) {
 	service, provider, history := newTestCustomerSupportService(t)
@@ -649,12 +708,13 @@ func newTestCustomerSupportService(t *testing.T) (*customerSupportService, *fake
 
 // fakeChatProvider 记录调用次数，以证明未完成骨架不越过模型边界。
 type fakeChatProvider struct {
-	generateCalls   int
-	streamCalls     int
-	generateResults []modelResult
-	generateErrors  []error
-	streamResults   []messageStream
-	streamErrors    []error
+	generateCalls     int
+	streamCalls       int
+	lastStreamContext context.Context
+	generateResults   []modelResult
+	generateErrors    []error
+	streamResults     []messageStream
+	streamErrors      []error
 }
 
 // Generate 记录非流式调用；测试失败时返回可识别错误。
@@ -670,10 +730,11 @@ func (provider *fakeChatProvider) Generate(context.Context, modelCall) (modelRes
 	return modelResult{}, errors.New("fake provider generate 未配置")
 }
 
-// Stream 记录流创建调用；测试失败时返回可识别错误。
-func (provider *fakeChatProvider) Stream(context.Context, modelCall) (messageStream, error) {
+// Stream 记录流创建调用及其 Context；测试失败时返回可识别错误。
+func (provider *fakeChatProvider) Stream(ctx context.Context, _ modelCall) (messageStream, error) {
 	callIndex := provider.streamCalls
 	provider.streamCalls++
+	provider.lastStreamContext = ctx
 	if callIndex < len(provider.streamErrors) && provider.streamErrors[callIndex] != nil {
 		return nil, provider.streamErrors[callIndex]
 	}

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/cloudwego/eino-ext/components/model/openai"
@@ -27,6 +28,36 @@ type stageMetrics struct {
 	Latency  time.Duration
 	Success  bool
 	Usage    tokenUsage
+}
+
+// cancelOnCloseStream 在关闭底层流后取消其专属超时 Context，避免成功流被提前取消。
+type cancelOnCloseStream struct {
+	stream messageStream
+	cancel context.CancelFunc
+	once   sync.Once
+}
+
+// Recv 将读取操作委托给底层模型流。
+func (stream *cancelOnCloseStream) Recv() (modelChunk, error) {
+	if stream == nil || stream.stream == nil {
+		return modelChunk{}, fmt.Errorf("模型流未初始化")
+	}
+	return stream.stream.Recv()
+}
+
+// Close 只执行一次底层流关闭和 Context 取消，释放流式请求资源。
+func (stream *cancelOnCloseStream) Close() {
+	if stream == nil {
+		return
+	}
+	stream.once.Do(func() {
+		if stream.stream != nil {
+			stream.stream.Close()
+		}
+		if stream.cancel != nil {
+			stream.cancel()
+		}
+	})
 }
 
 // newGovernanceConfig 从练习配置创建每个进程共享的模型调用治理参数。
@@ -123,16 +154,26 @@ func governedStream(
 	var lastErr error
 	var metrics stageMetrics
 	for i := 0; i <= config.MaxRetries; i++ {
+		if err := config.Limiter.Wait(ctx); err != nil {
+			lastErr = fmt.Errorf("等待模型调用限流失败: %w", err)
+			break
+		}
+
 		retries++
 		metrics.Attempts = retries
 		timeout, cancelFunc := context.WithTimeout(ctx, config.Timeout)
 		stream, err := provider.Stream(timeout, call)
-		cancelFunc()
 		if err == nil {
+			if stream == nil {
+				cancelFunc()
+				metrics.Latency = time.Since(now)
+				return nil, metrics, fmt.Errorf("模型流不能为空")
+			}
 			metrics.Success = true
 			metrics.Latency = time.Since(now)
-			return stream, metrics, nil
+			return &cancelOnCloseStream{stream: stream, cancel: cancelFunc}, metrics, nil
 		}
+		cancelFunc()
 		lastErr = err
 		if !isRetryableModelError(ctx, err) {
 			break
